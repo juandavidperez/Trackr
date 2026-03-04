@@ -1,0 +1,23 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "Trackr"
+  ],
+  "homepage": "https://github.com/juandavidperez/Trackr#readme",
+  "bugs": {
+    "url": "https://github.com/juandavidperez/Trackr/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juandavidperez/Trackr.git"
+  },
+  "license": "ISC",
+  "author": "juandavidperez",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
