@@ -29,7 +29,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 
 | Layer | Technology | Why |
 |-------|-----------|-----|
-| Frontend | Angular 17+, TypeScript, Tailwind CSS | Component architecture, strong typing, utility-first styling |
+| Frontend | Angular 21 (LTS), TypeScript 5.9, Tailwind CSS 4 | Component architecture, strong typing, utility-first styling |
 | Backend | Java 17+, Spring Boot 3, Spring Security | Industry-standard enterprise framework with robust security |
 | Database | PostgreSQL | Relational data with complex relationships (users ↔ projects ↔ tasks) |
 | Auth | Spring Security + JWT | Stateless auth with access/refresh token rotation |
@@ -123,8 +123,9 @@ trackr/
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+- Node.js 24 LTS (Krypton) — only needed for local development outside Docker (`.nvmrc` included, use `nvm use`)
 
-That's it. No need to install Java, Node.js, or PostgreSQL locally.
+That's it for Docker. No need to install Java, Node.js, or PostgreSQL locally.
 
 ### 1. Clone the repository
 

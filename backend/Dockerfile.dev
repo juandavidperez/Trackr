@@ -6,7 +6,9 @@ COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
 COPY src ./src
+COPY dev-entrypoint.sh .
+RUN chmod +x dev-entrypoint.sh
 
 EXPOSE 8080
 
-CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Dspring.devtools.restart.enabled=true"]
+CMD ["./dev-entrypoint.sh"]
