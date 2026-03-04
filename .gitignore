@@ -1,0 +1,77 @@
+# =====================
+# Java / Spring Boot
+# =====================
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.jar
+backend/*.war
+
+# Spring Boot
+backend/*.log
+backend/logs/
+
+# =====================
+# Maven
+# =====================
+backend/.mvn/timing.properties
+backend/pom.xml.tag
+backend/pom.xml.releaseBackup
+backend/pom.xml.versionsBackup
+backend/pom.xml.next
+backend/release.properties
+
+# =====================
+# Angular / Node.js
+# =====================
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.sass-cache/
+frontend/tmp/
+frontend/out-tsc/
+frontend/*.tgz
+
+# =====================
+# Environment & Secrets
+# =====================
+.env
+*.env.local
+backend/src/main/resources/application-dev.yml
+backend/src/main/resources/application-local.yml
+
+# =====================
+# IDE
+# =====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# =====================
+# OS
+# =====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =====================
+# Docker
+# =====================
+docker-compose.override.yml
+
+# =====================
+# Misc
+# =====================
+*.swp
+*.swo
+*~
