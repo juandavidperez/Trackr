@@ -200,7 +200,7 @@ export class RegisterComponent {
 
     const { confirmPassword, ...data } = this.form.getRawValue();
     this.authService.register(data).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: () => this.router.navigate(['/dashboard']),
       error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.message ?? 'Registration failed. Please try again.');
