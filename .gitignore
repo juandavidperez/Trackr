@@ -75,3 +75,7 @@ docker-compose.override.yml
 *.swp
 *.swo
 *~
+# =====================
+# Claude
+# ===================== 
+CLAUDE.md
