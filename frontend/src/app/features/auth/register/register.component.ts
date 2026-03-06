@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -172,6 +172,10 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
 })
 export class RegisterComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
   readonly error = signal('');
   readonly loading = signal(false);
 
@@ -184,12 +188,6 @@ export class RegisterComponent {
     },
     { validators: RegisterComponent.passwordsMatch },
   );
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-  ) {}
 
   onSubmit(): void {
     this.form.markAllAsTouched();

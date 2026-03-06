@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -10,6 +11,11 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
   private readonly authUrl = `${environment.apiUrl}/auth`;
   private readonly _isAuthenticated = signal(this.hasToken());
   private readonly _currentUser = signal<User | null>(null);
@@ -17,10 +23,7 @@ export class AuthService {
   readonly isAuthenticated = this._isAuthenticated.asReadonly();
   readonly currentUser = this._currentUser.asReadonly();
 
-  constructor(
-    private http: HttpClient,
-    private router: Router,
-  ) {
+  constructor() {
     if (this.hasToken()) {
       this.loadCurrentUser();
     }
@@ -53,28 +56,32 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    if (this.isBrowser) {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
     this._isAuthenticated.set(false);
     this._currentUser.set(null);
     this.router.navigate(['/auth/login']);
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return this.isBrowser ? localStorage.getItem(ACCESS_TOKEN_KEY) : null;
   }
 
   getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return this.isBrowser ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
   }
 
   private hasToken(): boolean {
-    return !!localStorage.getItem(ACCESS_TOKEN_KEY);
+    return this.isBrowser && !!localStorage.getItem(ACCESS_TOKEN_KEY);
   }
 
   private storeTokens(response: AuthResponse): void {
-    localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+    if (this.isBrowser) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+    }
     this._isAuthenticated.set(true);
   }
 

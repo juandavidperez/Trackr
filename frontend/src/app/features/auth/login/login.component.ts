@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -134,6 +134,10 @@ import { AuthService } from '../../../core/services/auth.service';
   `,
 })
 export class LoginComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
   readonly error = signal('');
   readonly loading = signal(false);
 
@@ -141,12 +145,6 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-  ) {}
 
   onSubmit(): void {
     this.form.markAllAsTouched();
