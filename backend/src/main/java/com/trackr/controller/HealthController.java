@@ -2,6 +2,7 @@ package com.trackr.controller;
 
 import java.util.Map;
 
+import com.trackr.dto.UserResponse;
 import com.trackr.model.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,11 +20,7 @@ public class HealthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "role", user.getRole().name()));
+    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole()));
     }
 }
