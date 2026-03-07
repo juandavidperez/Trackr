@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Start spring-boot:run in background
-mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=true" -Dspring.profiles.active=dev &
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=true" -Dspring-boot.run.profiles=dev &
 APP_PID=$!
 
 # Wait for initial compilation to finish

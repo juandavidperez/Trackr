@@ -22,8 +22,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          + "AND (:status IS NULL OR t.status = :status) "
          + "AND (:priority IS NULL OR t.priority = :priority) "
          + "AND (:assigneeId IS NULL OR t.assignee.id = :assigneeId) "
-         + "AND (:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%')) "
-         + "OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+         + "AND (:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) "
+         + "OR LOWER(t.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     List<Task> findByFilters(@Param("projectId") Long projectId,
                              @Param("status") TaskStatus status,
                              @Param("priority") TaskPriority priority,
