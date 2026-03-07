@@ -36,8 +36,11 @@ public class TaskController {
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) TaskPriority priority,
             @RequestParam(required = false) Long assigneeId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(taskService.listByProject(projectId, status, priority, assigneeId, user));
+        return ResponseEntity.ok(taskService.listByProject(projectId, status, priority, assigneeId, search, sortBy, sortDir, user));
     }
 
     @PutMapping("/api/tasks/{id}")

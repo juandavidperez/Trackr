@@ -14,11 +14,12 @@ import com.trackr.repository.ProjectRepository;
 import com.trackr.repository.TaskRepository;
 import com.trackr.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -51,22 +52,22 @@ public class TaskService {
         return toResponse(task);
     }
 
-    public List<TaskResponse> listByProject(Long projectId, TaskStatus status, TaskPriority priority, Long assigneeId, User user) {
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "dueDate", "createdAt", "priority", "status", "title"
+    );
+
+    public List<TaskResponse> listByProject(Long projectId, TaskStatus status, TaskPriority priority,
+                                             Long assigneeId, String search, String sortBy, String sortDir, User user) {
         Project project = findProjectOrThrow(projectId);
         requireMember(project, user);
 
-        List<Task> tasks;
-        if (status != null) {
-            tasks = taskRepository.findByProjectIdAndStatus(projectId, status);
-        } else {
-            tasks = taskRepository.findByProjectId(projectId);
-        }
+        String sortField = sortBy != null && ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "createdAt";
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortField);
 
-        return tasks.stream()
-                .filter(t -> priority == null || t.getPriority() == priority)
-                .filter(t -> assigneeId == null || (t.getAssignee() != null && t.getAssignee().getId().equals(assigneeId)))
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        List<Task> tasks = taskRepository.findByFilters(projectId, status, priority, assigneeId, search, sort);
+
+        return tasks.stream().map(this::toResponse).toList();
     }
 
     @Transactional
