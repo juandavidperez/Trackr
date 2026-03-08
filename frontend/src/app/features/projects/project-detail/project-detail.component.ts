@@ -5,7 +5,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
-import { ProjectResponse } from '../../../core/models/project.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProjectMember, ProjectResponse } from '../../../core/models/project.model';
 import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/task.model';
 
 @Component({
@@ -40,10 +41,10 @@ import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../
       select.styled-select {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
-        background-position: right 0.5rem center;
+        background-position: right 0.25rem center;
         background-repeat: no-repeat;
         background-size: 1.25em 1.25em;
-        padding-right: 2rem;
+        padding-right: 1.75rem;
       }
     `,
   ],
@@ -106,23 +107,203 @@ import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../
               <p class="mt-1 max-w-2xl text-sm text-zinc-500">{{ project()!.description }}</p>
             }
           </div>
-          <button
-            (click)="openTaskModal()"
-            class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:outline-none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
+          <div class="flex shrink-0 items-center gap-2">
+            <button
+              (click)="showMembersPanel.set(!showMembersPanel())"
+              class="inline-flex items-center gap-2 rounded-lg border border-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-200"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            New Task
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                />
+              </svg>
+              Members
+              <span
+                class="rounded-full bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-zinc-500"
+              >
+                {{ members().length }}
+              </span>
+            </button>
+            <button
+              (click)="openTaskModal()"
+              class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:outline-none"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              New Task
+            </button>
+          </div>
         </div>
+
+        <!-- Members Panel -->
+        @if (showMembersPanel()) {
+          <div
+            class="mt-6 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-5 animate-fade-in-up"
+          >
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-white">Project Members</h3>
+              <button
+                (click)="showMembersPanel.set(false)"
+                class="rounded p-1 text-zinc-600 transition-colors hover:text-zinc-400"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Owner -->
+            <div class="mt-4 space-y-2">
+              <div
+                class="flex items-center justify-between rounded-lg border border-zinc-800/40 bg-zinc-950/40 px-4 py-3"
+              >
+                <div class="flex items-center gap-3">
+                  <span
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600/20 text-xs font-semibold text-indigo-400"
+                  >
+                    {{ getInitials(project()!.ownerName) }}
+                  </span>
+                  <div>
+                    <p class="text-sm font-medium text-zinc-200">{{ project()!.ownerName }}</p>
+                    <p class="text-xs text-zinc-600">{{ project()!.ownerEmail }}</p>
+                  </div>
+                </div>
+                <span
+                  class="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400"
+                >
+                  Owner
+                </span>
+              </div>
+
+              <!-- Members list -->
+              @for (member of members(); track member.id) {
+                <div
+                  class="flex items-center justify-between rounded-lg border border-zinc-800/40 bg-zinc-950/40 px-4 py-3"
+                >
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700/30 text-xs font-semibold text-zinc-400"
+                    >
+                      {{ getInitials(member.name) }}
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-zinc-200">{{ member.name }}</p>
+                      <p class="text-xs text-zinc-600">{{ member.email }}</p>
+                    </div>
+                  </div>
+                  @if (isOwner()) {
+                    <button
+                      (click)="removeMember(member.id)"
+                      class="rounded-lg p-1.5 text-zinc-600 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                      title="Remove member"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"
+                        />
+                      </svg>
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <p class="py-2 text-center text-xs text-zinc-700">No additional members</p>
+              }
+            </div>
+
+            <!-- Add member form -->
+            @if (isOwner()) {
+              <form
+                [formGroup]="addMemberForm"
+                (ngSubmit)="onAddMember()"
+                class="mt-4 flex gap-2"
+              >
+                <input
+                  type="email"
+                  formControlName="email"
+                  placeholder="Add member by email..."
+                  class="block flex-1 rounded-lg border border-zinc-800 bg-zinc-950/50 px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  [disabled]="addMemberForm.invalid || addingMember()"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  @if (addingMember()) {
+                    <svg
+                      class="h-4 w-4 animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      ></path>
+                    </svg>
+                  } @else {
+                    Add
+                  }
+                </button>
+              </form>
+              @if (memberError()) {
+                <p class="mt-2 text-xs text-red-400">{{ memberError() }}</p>
+              }
+              @if (memberSuccess()) {
+                <p class="mt-2 text-xs text-emerald-400">{{ memberSuccess() }}</p>
+              }
+            }
+          </div>
+        }
 
         <!-- Filter Bar -->
         <div
@@ -197,35 +378,13 @@ import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../
               [title]="sortDir() === 'asc' ? 'Ascending' : 'Descending'"
             >
               @if (sortDir() === 'asc') {
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
                 </svg>
                 Asc
               } @else {
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
                 </svg>
                 Desc
               }
@@ -238,19 +397,8 @@ import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../
               (click)="clearFilters()"
               class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
               Clear
             </button>
@@ -494,11 +642,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly projectService = inject(ProjectService);
   private readonly taskService = inject(TaskService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly project = signal<ProjectResponse | null>(null);
   readonly tasks = signal<TaskResponse[]>([]);
+  readonly members = signal<ProjectMember[]>([]);
   readonly showTaskModal = signal(false);
   readonly creatingTask = signal(false);
   readonly taskError = signal('');
@@ -516,6 +666,16 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
 
   private readonly searchSubject = new Subject<string>();
   private searchSub?: Subscription;
+
+  // Member management state
+  readonly showMembersPanel = signal(false);
+  readonly addingMember = signal(false);
+  readonly memberError = signal('');
+  readonly memberSuccess = signal('');
+
+  readonly isOwner = computed(
+    () => this.authService.currentUser()?.email === this.project()?.ownerEmail,
+  );
 
   readonly todoTasks = computed(() => this.tasks().filter((t) => t.status === 'TODO'));
   readonly inProgressTasks = computed(() =>
@@ -551,6 +711,10 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     dueDate: [''],
   });
 
+  readonly addMemberForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+  });
+
   private projectId = 0;
 
   ngOnInit(): void {
@@ -567,6 +731,8 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.searchSub?.unsubscribe();
   }
+
+  // -- Filter methods --
 
   onSearchInput(event: Event): void {
     this.searchSubject.next((event.target as HTMLInputElement).value);
@@ -597,6 +763,44 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.sortDir.set('desc');
     this.loadTasks();
   }
+
+  // -- Member management --
+
+  onAddMember(): void {
+    this.addMemberForm.markAllAsTouched();
+    if (this.addMemberForm.invalid) return;
+
+    this.addingMember.set(true);
+    this.memberError.set('');
+    this.memberSuccess.set('');
+
+    const email = this.addMemberForm.getRawValue().email;
+    this.projectService.addMember(this.projectId, { email }).subscribe({
+      next: () => {
+        this.addingMember.set(false);
+        this.addMemberForm.reset();
+        this.memberSuccess.set(`${email} has been added to the project`);
+        this.loadMembers();
+      },
+      error: (err) => {
+        this.addingMember.set(false);
+        this.memberError.set(err.error?.message ?? 'Failed to add member');
+      },
+    });
+  }
+
+  removeMember(userId: number): void {
+    this.memberError.set('');
+    this.memberSuccess.set('');
+    this.projectService.removeMember(this.projectId, userId).subscribe({
+      next: () => this.loadMembers(),
+      error: (err) => {
+        this.memberError.set(err.error?.message ?? 'Failed to remove member');
+      },
+    });
+  }
+
+  // -- Task management --
 
   openTaskModal(): void {
     this.taskForm.reset({ title: '', description: '', priority: 'MEDIUM', dueDate: '' });
@@ -671,6 +875,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       next: (project) => {
         this.project.set(project);
         this.loadTasks();
+        this.loadMembers();
       },
       error: () => this.loading.set(false),
     });
@@ -692,6 +897,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  private loadMembers(): void {
+    this.projectService.getMembers(this.projectId).subscribe({
+      next: (members) => this.members.set(members),
+      error: () => this.members.set([]),
     });
   }
 }
