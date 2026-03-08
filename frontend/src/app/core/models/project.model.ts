@@ -16,3 +16,10 @@ export interface ProjectResponse {
 export interface AddMemberRequest {
   email: string;
 }
+
+export interface ProjectMember {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}

@@ -3,6 +3,7 @@ package com.trackr.controller;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.UserResponse;
 import com.trackr.model.User;
 import com.trackr.service.ProjectService;
 import jakarta.validation.Valid;
@@ -54,6 +55,13 @@ public class ProjectController {
             @AuthenticationPrincipal User user) {
         projectService.delete(id, user);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<UserResponse>> getMembers(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(projectService.getMembers(id, user));
     }
 
     @PostMapping("/{id}/members")
