@@ -1,15 +1,15 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
-import { ProjectResponse } from '../../../core/models/project.model';
-import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/task.model';
+import { ProjectResponse, ProjectMember } from '../../../core/models/project.model';
+import { TaskRequest, TaskResponse, TaskStatus } from '../../../core/models/task.model';
+import { TaskFormModalComponent } from '../../../shared/components/task-form-modal/task-form-modal.component';
 
 @Component({
   selector: 'app-project-detail',
-  imports: [RouterLink, NgClass, ReactiveFormsModule],
+  imports: [RouterLink, NgClass, TaskFormModalComponent],
   styles: [
     `
       @keyframes fadeInUp {
@@ -106,7 +106,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
             }
           </div>
           <button
-            (click)="openTaskModal()"
+            (click)="openCreateTask()"
             class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:outline-none"
           >
             <svg
@@ -142,10 +142,33 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
               <div class="space-y-3">
                 @for (task of col.tasks; track task.id; let i = $index) {
                   <div
-                    class="animate-fade-in-up rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700/60"
+                    class="group/card animate-fade-in-up rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700/60"
                     [style.animation-delay]="i * 50 + 'ms'"
                   >
-                    <p class="text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                    <!-- Title + Edit button -->
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                      <button
+                        (click)="openEditTask(task)"
+                        class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100"
+                        title="Edit task"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                          />
+                        </svg>
+                      </button>
+                    </div>
 
                     @if (task.description) {
                       <p class="mt-1 line-clamp-1 text-xs text-zinc-600">{{ task.description }}</p>
@@ -184,9 +207,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
                       @if (task.dueDate) {
                         <span
                           class="flex items-center gap-1 text-xs"
-                          [ngClass]="
-                            isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'
-                          "
+                          [ngClass]="isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -228,133 +249,17 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
         </div>
       }
 
-      <!-- Create Task Modal -->
-      @if (showTaskModal()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div
-            class="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            (click)="closeTaskModal()"
-          ></div>
-
-          <div
-            class="relative w-full max-w-md rounded-xl border border-zinc-800/60 bg-zinc-950 p-6 shadow-2xl animate-fade-in-up"
-          >
-            <h2 class="text-lg font-semibold text-white">Create Task</h2>
-            <p class="mt-1 text-sm text-zinc-500">Add a new task to this project</p>
-
-            @if (taskError()) {
-              <div
-                class="mt-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-              >
-                {{ taskError() }}
-              </div>
-            }
-
-            <form [formGroup]="taskForm" (ngSubmit)="onTaskSubmit()" class="mt-6 space-y-4">
-              <div>
-                <label for="title" class="mb-1.5 block text-sm font-medium text-zinc-300"
-                  >Title</label
-                >
-                <input
-                  id="title"
-                  type="text"
-                  formControlName="title"
-                  class="block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
-                  placeholder="e.g. Design landing page mockup"
-                />
-                @if (
-                  taskForm.get('title')?.touched && taskForm.get('title')?.hasError('required')
-                ) {
-                  <p class="mt-1.5 text-xs text-red-400">Title is required</p>
-                }
-              </div>
-
-              <div>
-                <label for="taskDescription" class="mb-1.5 block text-sm font-medium text-zinc-300"
-                  >Description</label
-                >
-                <textarea
-                  id="taskDescription"
-                  formControlName="description"
-                  rows="3"
-                  class="block w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
-                  placeholder="Describe the task..."
-                ></textarea>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label for="priority" class="mb-1.5 block text-sm font-medium text-zinc-300"
-                    >Priority</label
-                  >
-                  <select
-                    id="priority"
-                    formControlName="priority"
-                    class="status-select block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
-                  >
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label for="dueDate" class="mb-1.5 block text-sm font-medium text-zinc-300"
-                    >Due date</label
-                  >
-                  <input
-                    id="dueDate"
-                    type="date"
-                    formControlName="dueDate"
-                    class="block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  (click)="closeTaskModal()"
-                  class="rounded-lg border border-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  [disabled]="taskForm.invalid || creatingTask()"
-                  class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  @if (creatingTask()) {
-                    <svg
-                      class="h-4 w-4 animate-spin"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      ></path>
-                    </svg>
-                    Creating...
-                  } @else {
-                    Create Task
-                  }
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      }
+      <!-- Task Form Modal -->
+      <app-task-form-modal
+        [visible]="showTaskModal()"
+        [mode]="taskModalMode()"
+        [task]="editingTask()"
+        [members]="members()"
+        [loading]="savingTask()"
+        [error]="taskError()"
+        (save)="onTaskSave($event)"
+        (close)="closeTaskModal()"
+      />
     </div>
   `,
 })
@@ -362,31 +267,43 @@ export class ProjectDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly projectService = inject(ProjectService);
   private readonly taskService = inject(TaskService);
-  private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
   readonly project = signal<ProjectResponse | null>(null);
   readonly tasks = signal<TaskResponse[]>([]);
+  readonly members = signal<ProjectMember[]>([]);
   readonly showTaskModal = signal(false);
-  readonly creatingTask = signal(false);
+  readonly taskModalMode = signal<'create' | 'edit'>('create');
+  readonly editingTask = signal<TaskResponse | null>(null);
+  readonly savingTask = signal(false);
   readonly taskError = signal('');
 
   readonly todoTasks = computed(() => this.tasks().filter((t) => t.status === 'TODO'));
-  readonly inProgressTasks = computed(() => this.tasks().filter((t) => t.status === 'IN_PROGRESS'));
+  readonly inProgressTasks = computed(() =>
+    this.tasks().filter((t) => t.status === 'IN_PROGRESS'),
+  );
   readonly doneTasks = computed(() => this.tasks().filter((t) => t.status === 'DONE'));
 
   readonly columns = computed(() => [
-    { status: 'TODO' as TaskStatus, label: 'Todo', dotColor: 'bg-zinc-400', tasks: this.todoTasks() },
-    { status: 'IN_PROGRESS' as TaskStatus, label: 'In Progress', dotColor: 'bg-indigo-400', tasks: this.inProgressTasks() },
-    { status: 'DONE' as TaskStatus, label: 'Done', dotColor: 'bg-emerald-400', tasks: this.doneTasks() },
+    {
+      status: 'TODO' as TaskStatus,
+      label: 'Todo',
+      dotColor: 'bg-zinc-400',
+      tasks: this.todoTasks(),
+    },
+    {
+      status: 'IN_PROGRESS' as TaskStatus,
+      label: 'In Progress',
+      dotColor: 'bg-indigo-400',
+      tasks: this.inProgressTasks(),
+    },
+    {
+      status: 'DONE' as TaskStatus,
+      label: 'Done',
+      dotColor: 'bg-emerald-400',
+      tasks: this.doneTasks(),
+    },
   ]);
-
-  readonly taskForm = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.maxLength(255)]],
-    description: ['', Validators.maxLength(1000)],
-    priority: ['MEDIUM' as TaskPriority],
-    dueDate: [''],
-  });
 
   private projectId = 0;
 
@@ -395,8 +312,16 @@ export class ProjectDetailComponent implements OnInit {
     this.loadData();
   }
 
-  openTaskModal(): void {
-    this.taskForm.reset({ title: '', description: '', priority: 'MEDIUM', dueDate: '' });
+  openCreateTask(): void {
+    this.editingTask.set(null);
+    this.taskModalMode.set('create');
+    this.taskError.set('');
+    this.showTaskModal.set(true);
+  }
+
+  openEditTask(task: TaskResponse): void {
+    this.editingTask.set(task);
+    this.taskModalMode.set('edit');
     this.taskError.set('');
     this.showTaskModal.set(true);
   }
@@ -405,32 +330,26 @@ export class ProjectDetailComponent implements OnInit {
     this.showTaskModal.set(false);
   }
 
-  onTaskSubmit(): void {
-    this.taskForm.markAllAsTouched();
-    if (this.taskForm.invalid) return;
-
-    this.creatingTask.set(true);
+  onTaskSave(request: TaskRequest): void {
+    this.savingTask.set(true);
     this.taskError.set('');
 
-    const value = this.taskForm.getRawValue();
-    this.taskService
-      .create(this.projectId, {
-        title: value.title,
-        description: value.description || undefined,
-        priority: value.priority,
-        dueDate: value.dueDate || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.creatingTask.set(false);
-          this.showTaskModal.set(false);
-          this.loadTasks();
-        },
-        error: (err) => {
-          this.creatingTask.set(false);
-          this.taskError.set(err.error?.message ?? 'Failed to create task');
-        },
-      });
+    const obs =
+      this.taskModalMode() === 'edit'
+        ? this.taskService.update(this.editingTask()!.id, request)
+        : this.taskService.create(this.projectId, request);
+
+    obs.subscribe({
+      next: () => {
+        this.savingTask.set(false);
+        this.showTaskModal.set(false);
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.savingTask.set(false);
+        this.taskError.set(err.error?.message ?? 'Failed to save task');
+      },
+    });
   }
 
   changeStatus(taskId: number, newStatus: string): void {
@@ -468,6 +387,7 @@ export class ProjectDetailComponent implements OnInit {
       next: (project) => {
         this.project.set(project);
         this.loadTasks();
+        this.loadMembers();
       },
       error: () => this.loading.set(false),
     });
@@ -480,6 +400,13 @@ export class ProjectDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  private loadMembers(): void {
+    this.projectService.getMembers(this.projectId).subscribe({
+      next: (members) => this.members.set(members),
+      error: () => this.members.set([]),
     });
   }
 }
