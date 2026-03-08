@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ProjectRequest, ProjectResponse, AddMemberRequest } from '../models/project.model';
+import { ProjectRequest, ProjectResponse, AddMemberRequest, ProjectMember } from '../models/project.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
@@ -27,6 +27,10 @@ export class ProjectService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  getMembers(projectId: number): Observable<ProjectMember[]> {
+    return this.http.get<ProjectMember[]>(`${this.baseUrl}/${projectId}/members`);
   }
 
   addMember(projectId: number, request: AddMemberRequest): Observable<void> {
