@@ -1,12 +1,13 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProjectMember, ProjectResponse } from '../../../core/models/project.model';
-import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/task.model';
+import { TaskFilterParams, TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/task.model';
 
 @Component({
   selector: 'app-project-detail',
@@ -37,7 +38,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
       .animate-fade-in {
         animation: fadeIn 0.3s ease-out both;
       }
-      select.status-select {
+      select.styled-select {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
         background-position: right 0.25rem center;
@@ -304,8 +305,108 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
           </div>
         }
 
+        <!-- Filter Bar -->
+        <div
+          class="mt-6 flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 sm:flex-row sm:items-center sm:flex-wrap"
+        >
+          <!-- Search -->
+          <div class="relative flex-1 sm:min-w-[200px] sm:max-w-xs">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              [value]="searchTerm()"
+              (input)="onSearchInput($event)"
+              class="block w-full rounded-lg border border-zinc-800 bg-zinc-950/50 py-2 pl-9 pr-3 text-sm text-white placeholder-zinc-600 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
+            />
+          </div>
+
+          <!-- Status filter -->
+          <select
+            class="styled-select rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
+            [value]="filterStatus()"
+            (change)="onFilterChange('status', $any($event.target).value)"
+          >
+            <option value="">All statuses</option>
+            <option value="TODO">Todo</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="DONE">Done</option>
+          </select>
+
+          <!-- Priority filter -->
+          <select
+            class="styled-select rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
+            [value]="filterPriority()"
+            (change)="onFilterChange('priority', $any($event.target).value)"
+          >
+            <option value="">All priorities</option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+
+          <!-- Sort -->
+          <select
+            class="styled-select rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
+            [value]="sortBy()"
+            (change)="onSortChange($any($event.target).value)"
+          >
+            <option value="">Default order</option>
+            <option value="createdAt">Created date</option>
+            <option value="dueDate">Due date</option>
+            <option value="priority">Priority</option>
+          </select>
+
+          <!-- Sort direction toggle -->
+          @if (sortBy()) {
+            <button
+              (click)="toggleSortDir()"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+              [title]="sortDir() === 'asc' ? 'Ascending' : 'Descending'"
+            >
+              @if (sortDir() === 'asc') {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" />
+                </svg>
+                Asc
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" />
+                </svg>
+                Desc
+              }
+            </button>
+          }
+
+          <!-- Clear filters -->
+          @if (hasActiveFilters()) {
+            <button
+              (click)="clearFilters()"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear
+            </button>
+          }
+        </div>
+
         <!-- Task Board -->
-        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
           @for (col of columns(); track col.status) {
             <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4">
               <!-- Column header -->
@@ -388,7 +489,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
                       }
 
                       <select
-                        class="status-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
+                        class="styled-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
                         [value]="task.status"
                         (change)="changeStatus(task.id, $any($event.target).value)"
                       >
@@ -469,7 +570,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
                   <select
                     id="priority"
                     formControlName="priority"
-                    class="status-select block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
+                    class="styled-select block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -537,7 +638,7 @@ import { TaskPriority, TaskResponse, TaskStatus } from '../../../core/models/tas
     </div>
   `,
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly projectService = inject(ProjectService);
   private readonly taskService = inject(TaskService);
@@ -551,6 +652,20 @@ export class ProjectDetailComponent implements OnInit {
   readonly showTaskModal = signal(false);
   readonly creatingTask = signal(false);
   readonly taskError = signal('');
+
+  // Filter state
+  readonly searchTerm = signal('');
+  readonly filterStatus = signal('');
+  readonly filterPriority = signal('');
+  readonly sortBy = signal('');
+  readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  readonly hasActiveFilters = computed(
+    () => !!this.searchTerm() || !!this.filterStatus() || !!this.filterPriority() || !!this.sortBy(),
+  );
+
+  private readonly searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
 
   // Member management state
   readonly showMembersPanel = signal(false);
@@ -604,7 +719,49 @@ export class ProjectDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
+    this.searchSub = this.searchSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((term) => {
+        this.searchTerm.set(term);
+        this.loadTasks();
+      });
     this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.searchSub?.unsubscribe();
+  }
+
+  // -- Filter methods --
+
+  onSearchInput(event: Event): void {
+    this.searchSubject.next((event.target as HTMLInputElement).value);
+  }
+
+  onFilterChange(type: 'status' | 'priority', value: string): void {
+    if (type === 'status') this.filterStatus.set(value);
+    else this.filterPriority.set(value);
+    this.loadTasks();
+  }
+
+  onSortChange(value: string): void {
+    this.sortBy.set(value);
+    if (!value) this.sortDir.set('desc');
+    this.loadTasks();
+  }
+
+  toggleSortDir(): void {
+    this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    this.loadTasks();
+  }
+
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.filterStatus.set('');
+    this.filterPriority.set('');
+    this.sortBy.set('');
+    this.sortDir.set('desc');
+    this.loadTasks();
   }
 
   // -- Member management --
@@ -725,7 +882,16 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   private loadTasks(): void {
-    this.taskService.getByProject(this.projectId).subscribe({
+    const filters: TaskFilterParams = {};
+    if (this.searchTerm()) filters.search = this.searchTerm();
+    if (this.filterStatus()) filters.status = this.filterStatus() as TaskStatus;
+    if (this.filterPriority()) filters.priority = this.filterPriority() as TaskPriority;
+    if (this.sortBy()) {
+      filters.sortBy = this.sortBy();
+      filters.sortDir = this.sortDir();
+    }
+
+    this.taskService.getByProject(this.projectId, filters).subscribe({
       next: (tasks) => {
         this.tasks.set(tasks);
         this.loading.set(false);
