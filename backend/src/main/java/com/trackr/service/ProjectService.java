@@ -3,6 +3,7 @@ package com.trackr.service;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.UserResponse;
 import com.trackr.exception.AccessDeniedException;
 import com.trackr.exception.ResourceNotFoundException;
 import com.trackr.model.Project;
@@ -65,6 +66,14 @@ public class ProjectService {
         Project project = findProjectOrThrow(id);
         requireOwner(project, user);
         projectRepository.delete(project);
+    }
+
+    public List<UserResponse> getMembers(Long projectId, User user) {
+        Project project = findProjectOrThrow(projectId);
+        requireMember(project, user);
+        return project.getMembers().stream()
+                .map(m -> new UserResponse(m.getId(), m.getName(), m.getEmail(), m.getRole()))
+                .collect(Collectors.toList());
     }
 
     @Transactional
