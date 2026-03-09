@@ -2,6 +2,7 @@ import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
@@ -12,7 +13,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
 
 @Component({
   selector: 'app-project-detail',
-  imports: [RouterLink, NgClass, ReactiveFormsModule, TaskFormModalComponent],
+  imports: [RouterLink, NgClass, ReactiveFormsModule, CdkDropList, CdkDrag, TaskFormModalComponent],
   styles: [
     `
       @keyframes fadeInUp {
@@ -46,6 +47,29 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         background-repeat: no-repeat;
         background-size: 1.25em 1.25em;
         padding-right: 1.75rem;
+      }
+      .cdk-drag-preview {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        background: rgba(24, 24, 27, 0.95);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        transform: rotate(2deg);
+      }
+      .cdk-drag-placeholder {
+        border-radius: 0.5rem;
+        border: 2px dashed rgba(99, 102, 241, 0.3);
+        background: rgba(99, 102, 241, 0.05);
+        min-height: 80px;
+        transition: all 0.2s ease;
+      }
+      .cdk-drag-placeholder * {
+        visibility: hidden;
+      }
+      .cdk-drag-animating {
+        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+      }
+      .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
       }
     `,
   ],
@@ -407,7 +431,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         </div>
 
         <!-- Task Board -->
-        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="mt-6 grid gap-6 lg:grid-cols-3" cdkDropListGroup>
           @for (col of columns(); track col.status) {
             <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4">
               <!-- Column header -->
@@ -422,10 +446,17 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
               </div>
 
               <!-- Task cards -->
-              <div class="space-y-3">
+              <div
+                class="space-y-3 min-h-[60px]"
+                cdkDropList
+                [cdkDropListData]="col.status"
+                (cdkDropListDropped)="onTaskDrop($event)"
+              >
                 @for (task of col.tasks; track task.id; let i = $index) {
                   <div
-                    class="group/card animate-fade-in-up rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700/60"
+                    cdkDrag
+                    [cdkDragData]="task"
+                    class="group/card animate-fade-in-up cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700/60 active:cursor-grabbing"
                     [style.animation-delay]="i * 50 + 'ms'"
                   >
                     <div class="flex items-start justify-between gap-2">
@@ -731,6 +762,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         this.taskError.set(err.error?.message ?? 'Failed to save task');
       },
     });
+  }
+
+  onTaskDrop(event: CdkDragDrop<TaskStatus>): void {
+    const task: TaskResponse = event.item.data;
+    const newStatus = event.container.data;
+    if (task.status === newStatus) return;
+    this.changeStatus(task.id, newStatus);
   }
 
   changeStatus(taskId: number, newStatus: string): void {
