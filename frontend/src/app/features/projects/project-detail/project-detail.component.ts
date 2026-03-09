@@ -431,7 +431,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         </div>
 
         <!-- Task Board -->
-        <div class="mt-6 grid gap-6 lg:grid-cols-3" cdkDropListGroup>
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
           @for (col of columns(); track col.status) {
             <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4">
               <!-- Column header -->
@@ -449,7 +449,9 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
               <div
                 class="space-y-3 min-h-[60px]"
                 cdkDropList
+                [id]="'col-' + col.status"
                 [cdkDropListData]="col.status"
+                [cdkDropListConnectedTo]="['col-TODO', 'col-IN_PROGRESS', 'col-DONE']"
                 (cdkDropListDropped)="onTaskDrop($event)"
               >
                 @for (task of col.tasks; track task.id; let i = $index) {
@@ -768,7 +770,18 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     const task: TaskResponse = event.item.data;
     const newStatus = event.container.data;
     if (task.status === newStatus) return;
-    this.changeStatus(task.id, newStatus);
+
+    // Optimistic update: move task immediately in UI
+    this.tasks.update((tasks) =>
+      tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
+    );
+
+    this.taskService.updateStatus(task.id, { status: newStatus }).subscribe({
+      next: (updatedTask) => {
+        this.tasks.update((tasks) => tasks.map((t) => (t.id === task.id ? updatedTask : t)));
+      },
+      error: () => this.loadTasks(),
+    });
   }
 
   changeStatus(taskId: number, newStatus: string): void {
