@@ -47,4 +47,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByProjectIdAndDueDateBeforeAndStatusNot(Long projectId, LocalDate date, TaskStatus status);
 
     long countByProjectId(Long projectId);
+
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee LEFT JOIN FETCH t.project " +
+           "WHERE t.assignee.id = :assigneeId AND t.dueDate < :date AND t.status <> :status " +
+           "ORDER BY t.dueDate ASC")
+    List<Task> findOverdueByAssignee(@Param("assigneeId") Long assigneeId,
+                                     @Param("date") LocalDate date,
+                                     @Param("status") TaskStatus status);
+
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee LEFT JOIN FETCH t.project " +
+           "WHERE t.assignee.id = :assigneeId AND t.status <> 'DONE' " +
+           "ORDER BY t.createdAt DESC")
+    List<Task> findRecentByAssignee(@Param("assigneeId") Long assigneeId, Pageable pageable);
 }
