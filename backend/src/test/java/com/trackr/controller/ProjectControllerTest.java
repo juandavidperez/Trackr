@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -110,23 +112,25 @@ class ProjectControllerTest {
     // --- list endpoint ---
 
     @Test
-    void list_returnsProjectList() throws Exception {
-        when(projectService.listByUser(any())).thenReturn(List.of(sampleResponse()));
+    void list_returnsPagedProjectList() throws Exception {
+        when(projectService.listByUser(any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
 
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Test Project"))
-                .andExpect(jsonPath("$[0].ownerName").value("John Doe"));
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Test Project"))
+                .andExpect(jsonPath("$.content[0].ownerName").value("John Doe"));
     }
 
     @Test
-    void list_empty_returnsEmptyArray() throws Exception {
-        when(projectService.listByUser(any())).thenReturn(List.of());
+    void list_empty_returnsEmptyPage() throws Exception {
+        when(projectService.listByUser(any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+                .andExpect(jsonPath("$.content").isEmpty());
     }
 
     // --- getById endpoint ---

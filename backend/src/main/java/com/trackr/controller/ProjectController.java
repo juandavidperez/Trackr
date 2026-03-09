@@ -3,11 +3,14 @@ package com.trackr.controller;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.ProjectStatsResponse;
 import com.trackr.dto.UserResponse;
 import com.trackr.model.User;
 import com.trackr.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,8 +33,10 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> list(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(projectService.listByUser(user));
+    public ResponseEntity<Page<ProjectResponse>> list(
+            @AuthenticationPrincipal User user,
+            Pageable pageable) {
+        return ResponseEntity.ok(projectService.listByUser(user, pageable));
     }
 
     @GetMapping("/{id}")
@@ -55,6 +60,13 @@ public class ProjectController {
             @AuthenticationPrincipal User user) {
         projectService.delete(id, user);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/stats")
+    public ResponseEntity<ProjectStatsResponse> getStats(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(projectService.getStats(id, user));
     }
 
     @GetMapping("/{id}/members")

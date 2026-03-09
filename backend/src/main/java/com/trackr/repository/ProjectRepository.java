@@ -1,13 +1,17 @@
 package com.trackr.repository;
 
 import com.trackr.model.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    List<Project> findByOwnerId(Long ownerId);
+    @Query("SELECT DISTINCT p FROM Project p LEFT JOIN p.members m WHERE p.owner.id = :userId OR m.id = :userId")
+    Page<Project> findByUserMembership(@Param("userId") Long userId, Pageable pageable);
 
-    List<Project> findByMembersId(Long userId);
+    @Query("SELECT COUNT(DISTINCT p) FROM Project p LEFT JOIN p.members m WHERE p.owner.id = :userId OR m.id = :userId")
+    long countByUserMembership(@Param("userId") Long userId);
 }

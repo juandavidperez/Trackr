@@ -780,13 +780,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (this.filterStatus()) filters.status = this.filterStatus() as TaskStatus;
     if (this.filterPriority()) filters.priority = this.filterPriority() as TaskPriority;
     if (this.sortBy()) {
-      filters.sortBy = this.sortBy();
-      filters.sortDir = this.sortDir();
+      filters.sort = `${this.sortBy()},${this.sortDir()}`;
     }
+    filters.size = 100;
 
     this.taskService.getByProject(this.projectId, filters).subscribe({
-      next: (tasks) => {
-        this.tasks.set(tasks);
+      next: (page) => {
+        this.tasks.set(page.content);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
