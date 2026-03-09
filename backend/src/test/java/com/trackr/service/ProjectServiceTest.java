@@ -17,6 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -27,6 +31,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,14 +100,16 @@ class ProjectServiceTest {
     // --- listByUser ---
 
     @Test
-    void listByUser_returnsCombinedDistinctProjects() {
-        when(projectRepository.findByOwnerId(1L)).thenReturn(List.of(testProject));
-        when(projectRepository.findByMembersId(1L)).thenReturn(List.of(testProject));
+    void listByUser_returnsPagedProjects() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Project> projectPage = new PageImpl<>(List.of(testProject), pageable, 1);
+        when(projectRepository.findByUserMembership(eq(1L), eq(pageable))).thenReturn(projectPage);
 
-        List<ProjectResponse> result = projectService.listByUser(owner);
+        Page<ProjectResponse> result = projectService.listByUser(owner, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Test Project");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Test Project");
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     // --- getById ---

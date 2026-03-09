@@ -345,8 +345,8 @@ export class ProjectListComponent implements OnInit {
   private loadProjects(): void {
     this.loading.set(true);
     this.projectService.getAll().subscribe({
-      next: (projects) => {
-        this.projects.set(projects);
+      next: (page) => {
+        this.projects.set(page.content);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

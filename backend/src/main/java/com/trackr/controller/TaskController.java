@@ -9,12 +9,12 @@ import com.trackr.model.enums.TaskStatus;
 import com.trackr.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,16 +31,15 @@ public class TaskController {
     }
 
     @GetMapping("/api/projects/{projectId}/tasks")
-    public ResponseEntity<List<TaskResponse>> list(
+    public ResponseEntity<Page<TaskResponse>> list(
             @PathVariable Long projectId,
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) TaskPriority priority,
             @RequestParam(required = false) Long assigneeId,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortDir,
+            Pageable pageable,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(taskService.listByProject(projectId, status, priority, assigneeId, search, sortBy, sortDir, user));
+        return ResponseEntity.ok(taskService.listByProject(projectId, status, priority, assigneeId, search, pageable, user));
     }
 
     @PutMapping("/api/tasks/{id}")

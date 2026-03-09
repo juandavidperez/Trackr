@@ -2,6 +2,17 @@ export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type SortDirection = 'asc' | 'desc';
 
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
 export interface TaskRequest {
   title: string;
   description?: string;
@@ -33,6 +44,7 @@ export interface TaskFilterParams {
   priority?: TaskPriority;
   assigneeId?: number;
   search?: string;
-  sortBy?: string;
-  sortDir?: SortDirection;
+  sort?: string;
+  page?: number;
+  size?: number;
 }

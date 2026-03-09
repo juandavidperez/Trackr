@@ -3,26 +3,33 @@ package com.trackr.service;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.ProjectStatsResponse;
 import com.trackr.dto.UserResponse;
 import com.trackr.exception.AccessDeniedException;
 import com.trackr.exception.ResourceNotFoundException;
 import com.trackr.model.Project;
 import com.trackr.model.User;
+import com.trackr.model.enums.TaskPriority;
+import com.trackr.model.enums.TaskStatus;
 import com.trackr.repository.ProjectRepository;
+import com.trackr.repository.TaskRepository;
 import com.trackr.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -36,13 +43,9 @@ public class ProjectService {
         return toResponse(project);
     }
 
-    public List<ProjectResponse> listByUser(User user) {
-        List<Project> owned = projectRepository.findByOwnerId(user.getId());
-        List<Project> member = projectRepository.findByMembersId(user.getId());
-        return Stream.concat(owned.stream(), member.stream())
-                .distinct()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Page<ProjectResponse> listByUser(User user, Pageable pageable) {
+        return projectRepository.findByUserMembership(user.getId(), pageable)
+                .map(this::toResponse);
     }
 
     public ProjectResponse getById(Long id, User user) {
@@ -105,6 +108,32 @@ public class ProjectService {
         project.getMembers().remove(member);
         project = projectRepository.save(project);
         return toResponse(project);
+    }
+
+    public ProjectStatsResponse getStats(Long projectId, User user) {
+        Project project = findProjectOrThrow(projectId);
+        requireMember(project, user);
+
+        int todo = (int) taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.TODO);
+        int inProgress = (int) taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.IN_PROGRESS);
+        int done = (int) taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.DONE);
+
+        int low = (int) taskRepository.countByProjectIdAndPriority(projectId, TaskPriority.LOW);
+        int medium = (int) taskRepository.countByProjectIdAndPriority(projectId, TaskPriority.MEDIUM);
+        int high = (int) taskRepository.countByProjectIdAndPriority(projectId, TaskPriority.HIGH);
+
+        int totalTasks = todo + inProgress + done;
+        int overdue = (int) taskRepository.countByProjectIdAndDueDateBeforeAndStatusNot(
+                projectId, LocalDate.now(), TaskStatus.DONE);
+        double completionPercentage = totalTasks > 0 ? (done * 100.0) / totalTasks : 0.0;
+
+        return new ProjectStatsResponse(
+                new ProjectStatsResponse.TasksByStatus(todo, inProgress, done),
+                new ProjectStatsResponse.TasksByPriority(low, medium, high),
+                totalTasks,
+                overdue,
+                completionPercentage
+        );
     }
 
     private Project findProjectOrThrow(Long id) {

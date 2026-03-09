@@ -30,20 +30,39 @@ describe('ProjectService', () => {
   // --- getAll ---
 
   describe('getAll', () => {
-    it('should GET /projects and return project list', () => {
+    it('should GET /projects and return paged project list', () => {
       const mockProjects = [
         { id: 1, name: 'Project A', description: 'Desc A', ownerName: 'John', ownerEmail: 'john@example.com', memberCount: 3, createdAt: '2026-01-01T00:00:00' },
         { id: 2, name: 'Project B', description: 'Desc B', ownerName: 'Jane', ownerEmail: 'jane@example.com', memberCount: 1, createdAt: '2026-01-02T00:00:00' },
       ];
+      const mockPage = {
+        content: mockProjects,
+        totalElements: 2,
+        totalPages: 1,
+        size: 20,
+        number: 0,
+        first: true,
+        last: true,
+        empty: false,
+      };
 
-      service.getAll().subscribe((projects) => {
-        expect(projects).toEqual(mockProjects);
-        expect(projects.length).toBe(2);
+      service.getAll().subscribe((page) => {
+        expect(page.content).toEqual(mockProjects);
+        expect(page.content.length).toBe(2);
       });
 
       const req = httpMock.expectOne(baseUrl);
       expect(req.request.method).toBe('GET');
-      req.flush(mockProjects);
+      req.flush(mockPage);
+    });
+
+    it('should pass pagination params when provided', () => {
+      service.getAll(1, 10).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === baseUrl);
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('size')).toBe('10');
+      req.flush({ content: [], totalElements: 0, totalPages: 0, size: 10, number: 1, first: false, last: true, empty: true });
     });
   });
 

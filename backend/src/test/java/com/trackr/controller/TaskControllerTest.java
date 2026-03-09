@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,7 +24,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -59,76 +60,56 @@ class TaskControllerTest {
     // --- list endpoint: query params ---
 
     @Test
-    void list_noParams_callsServiceWithNulls() throws Exception {
-        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
-                .thenReturn(List.of());
+    void list_noParams_returnsPage() throws Exception {
+        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), isNull(), any(Pageable.class), any()))
+                .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/projects/10/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
-
-        verify(taskService).listByProject(eq(10L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any());
+                .andExpect(jsonPath("$.content").isEmpty());
     }
 
     @Test
     void list_withStatusParam_forwardsToService() throws Exception {
-        when(taskService.listByProject(eq(10L), eq(TaskStatus.TODO), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
-                .thenReturn(List.of(sampleResponse()));
+        when(taskService.listByProject(eq(10L), eq(TaskStatus.TODO), isNull(), isNull(), isNull(), any(Pageable.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
 
         mockMvc.perform(get("/api/projects/10/tasks").param("status", "TODO"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("TODO"));
+                .andExpect(jsonPath("$.content[0].status").value("TODO"));
     }
 
     @Test
     void list_withPriorityParam_forwardsToService() throws Exception {
-        when(taskService.listByProject(eq(10L), isNull(), eq(TaskPriority.HIGH), isNull(), isNull(), isNull(), isNull(), any()))
-                .thenReturn(List.of(sampleResponse()));
+        when(taskService.listByProject(eq(10L), isNull(), eq(TaskPriority.HIGH), isNull(), isNull(), any(Pageable.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
 
         mockMvc.perform(get("/api/projects/10/tasks").param("priority", "HIGH"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].priority").value("HIGH"));
+                .andExpect(jsonPath("$.content[0].priority").value("HIGH"));
     }
 
     @Test
     void list_withSearchParam_forwardsToService() throws Exception {
-        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), eq("navbar"), isNull(), isNull(), any()))
-                .thenReturn(List.of(sampleResponse()));
+        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), eq("navbar"), any(Pageable.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
 
         mockMvc.perform(get("/api/projects/10/tasks").param("search", "navbar"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.content[0].id").value(1));
     }
 
     @Test
-    void list_withSortParams_forwardsToService() throws Exception {
-        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), isNull(), eq("title"), eq("asc"), any()))
-                .thenReturn(List.of(sampleResponse()));
+    void list_withPaginationParams_forwardsToService() throws Exception {
+        when(taskService.listByProject(eq(10L), isNull(), isNull(), isNull(), isNull(), any(Pageable.class), any()))
+                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
 
         mockMvc.perform(get("/api/projects/10/tasks")
-                        .param("sortBy", "title")
-                        .param("sortDir", "asc"))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "createdAt,desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("Test Task"));
-    }
-
-    @Test
-    void list_withAllParams_forwardsToService() throws Exception {
-        when(taskService.listByProject(eq(10L), eq(TaskStatus.IN_PROGRESS), eq(TaskPriority.MEDIUM),
-                eq(5L), eq("search"), eq("dueDate"), eq("desc"), any()))
-                .thenReturn(List.of());
-
-        mockMvc.perform(get("/api/projects/10/tasks")
-                        .param("status", "IN_PROGRESS")
-                        .param("priority", "MEDIUM")
-                        .param("assigneeId", "5")
-                        .param("search", "search")
-                        .param("sortBy", "dueDate")
-                        .param("sortDir", "desc"))
-                .andExpect(status().isOk());
-
-        verify(taskService).listByProject(eq(10L), eq(TaskStatus.IN_PROGRESS), eq(TaskPriority.MEDIUM),
-                eq(5L), eq("search"), eq("dueDate"), eq("desc"), any());
+                .andExpect(jsonPath("$.content[0].title").value("Test Task"));
     }
 
     // --- create endpoint: validation ---

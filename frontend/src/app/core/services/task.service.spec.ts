@@ -23,6 +23,17 @@ describe('TaskService', () => {
     updatedAt: '2026-03-01T00:00:00',
   };
 
+  const samplePage = {
+    content: [sampleTask],
+    totalElements: 1,
+    totalPages: 1,
+    size: 20,
+    number: 0,
+    first: true,
+    last: true,
+    empty: false,
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -44,14 +55,14 @@ describe('TaskService', () => {
 
   describe('getByProject', () => {
     it('should GET /projects/:id/tasks without filters', () => {
-      service.getByProject(10).subscribe((tasks) => {
-        expect(tasks).toEqual([sampleTask]);
+      service.getByProject(10).subscribe((page) => {
+        expect(page.content).toEqual([sampleTask]);
       });
 
       const req = httpMock.expectOne(`${apiUrl}/projects/10/tasks`);
       expect(req.request.method).toBe('GET');
       expect(req.request.params.keys().length).toBe(0);
-      req.flush([sampleTask]);
+      req.flush(samplePage);
     });
 
     it('should append status filter as query param', () => {
@@ -59,7 +70,7 @@ describe('TaskService', () => {
 
       const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
       expect(req.request.params.get('status')).toBe('TODO');
-      req.flush([]);
+      req.flush(samplePage);
     });
 
     it('should append priority filter as query param', () => {
@@ -67,7 +78,7 @@ describe('TaskService', () => {
 
       const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
       expect(req.request.params.get('priority')).toBe('HIGH');
-      req.flush([]);
+      req.flush(samplePage);
     });
 
     it('should append assigneeId filter as query param', () => {
@@ -75,7 +86,7 @@ describe('TaskService', () => {
 
       const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
       expect(req.request.params.get('assigneeId')).toBe('5');
-      req.flush([]);
+      req.flush(samplePage);
     });
 
     it('should append search filter as query param', () => {
@@ -83,16 +94,24 @@ describe('TaskService', () => {
 
       const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
       expect(req.request.params.get('search')).toBe('navbar');
-      req.flush([]);
+      req.flush(samplePage);
     });
 
-    it('should append sort params as query params', () => {
-      service.getByProject(10, { sortBy: 'dueDate', sortDir: 'asc' }).subscribe();
+    it('should append sort param as query param', () => {
+      service.getByProject(10, { sort: 'dueDate,asc' }).subscribe();
 
       const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
-      expect(req.request.params.get('sortBy')).toBe('dueDate');
-      expect(req.request.params.get('sortDir')).toBe('asc');
-      req.flush([]);
+      expect(req.request.params.get('sort')).toBe('dueDate,asc');
+      req.flush(samplePage);
+    });
+
+    it('should append pagination params', () => {
+      service.getByProject(10, { page: 1, size: 10 }).subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === `${apiUrl}/projects/10/tasks`);
+      expect(req.request.params.get('page')).toBe('1');
+      expect(req.request.params.get('size')).toBe('10');
+      req.flush(samplePage);
     });
 
     it('should append all filters as query params', () => {
@@ -102,8 +121,9 @@ describe('TaskService', () => {
           priority: 'MEDIUM',
           assigneeId: 3,
           search: 'test',
-          sortBy: 'priority',
-          sortDir: 'desc',
+          sort: 'priority,desc',
+          page: 0,
+          size: 20,
         })
         .subscribe();
 
@@ -112,9 +132,10 @@ describe('TaskService', () => {
       expect(req.request.params.get('priority')).toBe('MEDIUM');
       expect(req.request.params.get('assigneeId')).toBe('3');
       expect(req.request.params.get('search')).toBe('test');
-      expect(req.request.params.get('sortBy')).toBe('priority');
-      expect(req.request.params.get('sortDir')).toBe('desc');
-      req.flush([]);
+      expect(req.request.params.get('sort')).toBe('priority,desc');
+      expect(req.request.params.get('page')).toBe('0');
+      expect(req.request.params.get('size')).toBe('20');
+      req.flush(samplePage);
     });
   });
 
