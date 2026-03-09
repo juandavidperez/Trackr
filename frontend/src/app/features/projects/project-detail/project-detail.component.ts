@@ -570,7 +570,18 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
                     </div>
                   </div>
                 } @empty {
-                  <p class="py-6 text-center text-xs text-zinc-700">No tasks</p>
+                  <div class="flex flex-col items-center py-8 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 56 56" fill="none">
+                      <!-- Clipboard -->
+                      <rect x="14" y="8" width="28" height="38" rx="4" class="fill-zinc-800/40 stroke-zinc-700/30" stroke-width="1.2"/>
+                      <rect x="20" y="4" width="16" height="8" rx="3" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.2"/>
+                      <!-- Lines -->
+                      <rect x="20" y="20" width="16" height="2" rx="1" class="fill-zinc-700/40"/>
+                      <rect x="20" y="26" width="12" height="2" rx="1" class="fill-zinc-700/30"/>
+                      <rect x="20" y="32" width="14" height="2" rx="1" class="fill-zinc-700/20"/>
+                    </svg>
+                    <p class="mt-2 text-xs text-zinc-600">No tasks here</p>
+                  </div>
                 }
               </div>
             </div>

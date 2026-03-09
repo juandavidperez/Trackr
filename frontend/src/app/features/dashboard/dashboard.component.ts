@@ -261,7 +261,16 @@ Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
                   </div>
                 </a>
               } @empty {
-                <p class="py-4 text-center text-xs text-zinc-700">No overdue tasks</p>
+                <div class="flex flex-col items-center py-6 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" viewBox="0 0 72 72" fill="none">
+                    <!-- Shield -->
+                    <path d="M36 10L14 20V34C14 48.36 23.64 61.56 36 65C48.36 61.56 58 48.36 58 34V20L36 10Z" class="fill-zinc-800/30 stroke-zinc-700/30" stroke-width="1.2"/>
+                    <!-- Checkmark -->
+                    <path d="M26 37L33 44L46 28" class="stroke-emerald-500/40" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <p class="mt-2 text-xs font-medium text-zinc-600">All caught up!</p>
+                  <p class="mt-0.5 text-[11px] text-zinc-700">No overdue tasks right now</p>
+                </div>
               }
             </div>
           </div>
@@ -296,7 +305,17 @@ Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
                   </div>
                 </a>
               } @empty {
-                <p class="py-4 text-center text-xs text-zinc-700">No tasks assigned</p>
+                <div class="flex flex-col items-center py-6 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" viewBox="0 0 72 72" fill="none">
+                    <!-- Inbox tray -->
+                    <rect x="14" y="24" width="44" height="32" rx="4" class="fill-zinc-800/30 stroke-zinc-700/30" stroke-width="1.2"/>
+                    <path d="M14 42H26L30 48H42L46 42H58" class="stroke-zinc-700/40" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Arrow down -->
+                    <path d="M36 14V32M30 26L36 32L42 26" class="stroke-zinc-600/30" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <p class="mt-2 text-xs font-medium text-zinc-600">No recent tasks</p>
+                  <p class="mt-0.5 text-[11px] text-zinc-700">New task assignments will appear here</p>
+                </div>
               }
             </div>
           </div>
