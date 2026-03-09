@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -152,30 +153,23 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
       }
 
       @if (!loading() && project()) {
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-1.5 text-sm">
+          <a routerLink="/dashboard" class="text-zinc-600 transition-colors hover:text-zinc-400">Dashboard</a>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+          </svg>
+          <a routerLink="/projects" class="text-zinc-600 transition-colors hover:text-zinc-400">Projects</a>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+          </svg>
+          <span class="text-zinc-400">{{ project()!.name }}</span>
+        </nav>
+
         <!-- Header -->
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <a
-              routerLink="/projects"
-              class="inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M15.75 19.5L8.25 12l7.5-7.5"
-                />
-              </svg>
-              Back to Projects
-            </a>
-            <h1 class="mt-2 text-2xl font-bold tracking-tight text-white">
+            <h1 class="text-2xl font-bold tracking-tight text-white">
               {{ project()!.name }}
             </h1>
             @if (project()!.description) {
@@ -630,6 +624,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
 })
 export class ProjectDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly titleService = inject(Title);
   private readonly projectService = inject(ProjectService);
   private readonly taskService = inject(TaskService);
   private readonly authService = inject(AuthService);
@@ -898,6 +893,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.projectService.getById(this.projectId).subscribe({
       next: (project) => {
         this.project.set(project);
+        this.titleService.setTitle(`${project.name} - Trackr`);
         this.loadTasks();
         this.loadMembers();
       },
