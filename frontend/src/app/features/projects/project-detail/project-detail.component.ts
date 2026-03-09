@@ -72,16 +72,6 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
       .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
         transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
       }
-      /* Mobile horizontal scroll snap */
-      @media (max-width: 1023px) {
-        .board-scroll {
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-        }
-        .board-scroll > * {
-          scroll-snap-align: start;
-        }
-      }
     `,
   ],
   template: `
@@ -110,9 +100,9 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
           </div>
 
           <!-- Kanban columns skeleton -->
-          <div class="mt-6 flex gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 lg:overflow-x-visible lg:pb-0">
+          <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             @for (col of [1, 2, 3]; track col) {
-              <div class="min-w-[280px] flex-1 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 max-lg:max-w-[320px]">
+              <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4">
                 <div class="mb-4 flex items-center justify-between">
                   <div class="h-5 w-24 animate-pulse rounded bg-zinc-800"></div>
                   <div class="h-5 w-6 animate-pulse rounded-full bg-zinc-800/60"></div>
@@ -466,9 +456,9 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         </div>
 
         <!-- Task Board -->
-        <div class="board-scroll mt-6 flex gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 lg:overflow-x-visible lg:pb-0">
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
           @for (col of columns(); track col.status) {
-            <div class="min-w-[280px] flex-1 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 max-lg:max-w-[320px]">
+            <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4">
               <!-- Column header -->
               <div class="mb-4 flex items-center gap-2.5">
                 <div class="h-2.5 w-2.5 rounded-full" [ngClass]="col.dotColor"></div>
@@ -497,7 +487,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
                     [style.animation-delay]="i * 50 + 'ms'"
                   >
                     <div class="flex items-start justify-between gap-2">
-                      <p class="min-w-0 truncate text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                      <p class="text-sm font-medium text-zinc-200">{{ task.title }}</p>
                       <button
                         (click)="openEditTask(task)"
                         class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100"
