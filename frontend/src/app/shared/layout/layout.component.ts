@@ -1,11 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastComponent } from '../components/toast/toast.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent],
   template: `
+    <app-toast />
     <div class="flex h-screen overflow-hidden bg-zinc-950 text-zinc-200">
       <!-- Mobile overlay -->
       @if (sidebarOpen()) {

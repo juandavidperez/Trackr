@@ -7,6 +7,7 @@ import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs'
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { ProjectMember, ProjectResponse } from '../../../core/models/project.model';
 import { TaskFilterParams, TaskPriority, TaskRequest, TaskResponse, TaskStatus } from '../../../core/models/task.model';
 import { TaskFormModalComponent } from '../../../shared/components/task-form-modal/task-form-modal.component';
@@ -572,6 +573,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   private readonly projectService = inject(ProjectService);
   private readonly taskService = inject(TaskService);
   private readonly authService = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
@@ -704,11 +706,14 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         this.addingMember.set(false);
         this.addMemberForm.reset();
         this.memberSuccess.set(`${email} has been added to the project`);
+        this.toast.success(`${email} added to the project`);
         this.loadMembers();
       },
       error: (err) => {
         this.addingMember.set(false);
-        this.memberError.set(err.error?.message ?? 'Failed to add member');
+        const msg = err.error?.message ?? 'Failed to add member';
+        this.memberError.set(msg);
+        this.toast.error(msg);
       },
     });
   }
@@ -717,9 +722,14 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.memberError.set('');
     this.memberSuccess.set('');
     this.projectService.removeMember(this.projectId, userId).subscribe({
-      next: () => this.loadMembers(),
+      next: () => {
+        this.toast.success('Member removed');
+        this.loadMembers();
+      },
       error: (err) => {
-        this.memberError.set(err.error?.message ?? 'Failed to remove member');
+        const msg = err.error?.message ?? 'Failed to remove member';
+        this.memberError.set(msg);
+        this.toast.error(msg);
       },
     });
   }
@@ -753,15 +763,19 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         ? this.taskService.update(this.editingTask()!.id, request)
         : this.taskService.create(this.projectId, request);
 
+    const isEdit = this.taskModalMode() === 'edit';
     obs.subscribe({
       next: () => {
         this.savingTask.set(false);
         this.showTaskModal.set(false);
+        this.toast.success(isEdit ? 'Task updated' : 'Task created');
         this.loadTasks();
       },
       error: (err) => {
         this.savingTask.set(false);
-        this.taskError.set(err.error?.message ?? 'Failed to save task');
+        const msg = err.error?.message ?? 'Failed to save task';
+        this.taskError.set(msg);
+        this.toast.error(msg);
       },
     });
   }
@@ -780,7 +794,10 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       next: (updatedTask) => {
         this.tasks.update((tasks) => tasks.map((t) => (t.id === task.id ? updatedTask : t)));
       },
-      error: () => this.loadTasks(),
+      error: () => {
+        this.toast.error('Failed to update task status');
+        this.loadTasks();
+      },
     });
   }
 
@@ -789,7 +806,10 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       next: (updatedTask) => {
         this.tasks.update((tasks) => tasks.map((t) => (t.id === taskId ? updatedTask : t)));
       },
-      error: () => this.loadTasks(),
+      error: () => {
+        this.toast.error('Failed to update task status');
+        this.loadTasks();
+      },
     });
   }
 

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { ProjectResponse } from '../../../core/models/project.model';
 
 @Component({
@@ -296,6 +297,7 @@ import { ProjectResponse } from '../../../core/models/project.model';
 export class ProjectListComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
   readonly projects = signal<ProjectResponse[]>([]);
@@ -333,11 +335,14 @@ export class ProjectListComponent implements OnInit {
       next: () => {
         this.creating.set(false);
         this.showModal.set(false);
+        this.toast.success('Project created successfully');
         this.loadProjects();
       },
       error: (err) => {
         this.creating.set(false);
-        this.error.set(err.error?.message ?? 'Failed to create project');
+        const msg = err.error?.message ?? 'Failed to create project';
+        this.error.set(msg);
+        this.toast.error(msg);
       },
     });
   }
@@ -349,7 +354,10 @@ export class ProjectListComponent implements OnInit {
         this.projects.set(page.content);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.toast.error('Failed to load projects');
+      },
     });
   }
 }
