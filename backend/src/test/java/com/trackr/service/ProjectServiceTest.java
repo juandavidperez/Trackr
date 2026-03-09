@@ -3,13 +3,17 @@ package com.trackr.service;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.ProjectStatsResponse;
 import com.trackr.dto.UserResponse;
 import com.trackr.exception.AccessDeniedException;
 import com.trackr.exception.ResourceNotFoundException;
 import com.trackr.model.Project;
 import com.trackr.model.User;
+import com.trackr.model.enums.TaskPriority;
+import com.trackr.model.enums.TaskStatus;
 import com.trackr.model.enums.UserRole;
 import com.trackr.repository.ProjectRepository;
+import com.trackr.repository.TaskRepository;
 import com.trackr.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +44,9 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -308,5 +316,73 @@ class ProjectServiceTest {
 
         assertThatThrownBy(() -> projectService.removeMember(10L, 2L, member))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    // --- getStats ---
+
+    @Test
+    void getStats_returnsCorrectTaskAndPriorityBreakdowns() {
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(testProject));
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.TODO)).thenReturn(3L);
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.IN_PROGRESS)).thenReturn(2L);
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.DONE)).thenReturn(5L);
+        when(taskRepository.countByProjectIdAndPriority(10L, TaskPriority.LOW)).thenReturn(4L);
+        when(taskRepository.countByProjectIdAndPriority(10L, TaskPriority.MEDIUM)).thenReturn(3L);
+        when(taskRepository.countByProjectIdAndPriority(10L, TaskPriority.HIGH)).thenReturn(3L);
+        when(taskRepository.countByProjectIdAndDueDateBeforeAndStatusNot(eq(10L), any(LocalDate.class), eq(TaskStatus.DONE))).thenReturn(1L);
+
+        ProjectStatsResponse response = projectService.getStats(10L, owner);
+
+        assertThat(response.tasksByStatus().todo()).isEqualTo(3);
+        assertThat(response.tasksByStatus().inProgress()).isEqualTo(2);
+        assertThat(response.tasksByStatus().done()).isEqualTo(5);
+        assertThat(response.tasksByPriority().low()).isEqualTo(4);
+        assertThat(response.tasksByPriority().medium()).isEqualTo(3);
+        assertThat(response.tasksByPriority().high()).isEqualTo(3);
+        assertThat(response.totalTasks()).isEqualTo(10);
+        assertThat(response.overdue()).isEqualTo(1);
+    }
+
+    @Test
+    void getStats_calculatesCompletionPercentage() {
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(testProject));
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.TODO)).thenReturn(0L);
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.IN_PROGRESS)).thenReturn(0L);
+        when(taskRepository.countByProjectIdAndStatus(10L, TaskStatus.DONE)).thenReturn(4L);
+        when(taskRepository.countByProjectIdAndPriority(eq(10L), any())).thenReturn(0L);
+        when(taskRepository.countByProjectIdAndDueDateBeforeAndStatusNot(eq(10L), any(LocalDate.class), eq(TaskStatus.DONE))).thenReturn(0L);
+
+        ProjectStatsResponse response = projectService.getStats(10L, owner);
+
+        assertThat(response.completionPercentage()).isEqualTo(100.0);
+    }
+
+    @Test
+    void getStats_noTasks_returnsZeroPercentage() {
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(testProject));
+        when(taskRepository.countByProjectIdAndStatus(eq(10L), any())).thenReturn(0L);
+        when(taskRepository.countByProjectIdAndPriority(eq(10L), any())).thenReturn(0L);
+        when(taskRepository.countByProjectIdAndDueDateBeforeAndStatusNot(eq(10L), any(LocalDate.class), eq(TaskStatus.DONE))).thenReturn(0L);
+
+        ProjectStatsResponse response = projectService.getStats(10L, owner);
+
+        assertThat(response.totalTasks()).isZero();
+        assertThat(response.completionPercentage()).isZero();
+    }
+
+    @Test
+    void getStats_notMember_throwsAccessDeniedException() {
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(testProject));
+
+        assertThatThrownBy(() -> projectService.getStats(10L, member))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getStats_projectNotFound_throwsResourceNotFoundException() {
+        when(projectRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> projectService.getStats(99L, owner))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

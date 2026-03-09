@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trackr.dto.AddMemberRequest;
 import com.trackr.dto.ProjectRequest;
 import com.trackr.dto.ProjectResponse;
+import com.trackr.dto.ProjectStatsResponse;
 import com.trackr.dto.UserResponse;
 import com.trackr.model.enums.UserRole;
 import com.trackr.repository.UserRepository;
@@ -251,5 +252,29 @@ class ProjectControllerTest {
                 .andExpect(jsonPath("$.id").value(1));
 
         verify(projectService).removeMember(eq(1L), eq(2L), any());
+    }
+
+    // --- getStats endpoint ---
+
+    @Test
+    void getStats_returnsProjectStats() throws Exception {
+        ProjectStatsResponse stats = new ProjectStatsResponse(
+                new ProjectStatsResponse.TasksByStatus(3, 2, 5),
+                new ProjectStatsResponse.TasksByPriority(4, 3, 3),
+                10, 1, 50.0
+        );
+        when(projectService.getStats(eq(1L), any())).thenReturn(stats);
+
+        mockMvc.perform(get("/api/projects/1/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tasksByStatus.todo").value(3))
+                .andExpect(jsonPath("$.tasksByStatus.inProgress").value(2))
+                .andExpect(jsonPath("$.tasksByStatus.done").value(5))
+                .andExpect(jsonPath("$.tasksByPriority.low").value(4))
+                .andExpect(jsonPath("$.tasksByPriority.medium").value(3))
+                .andExpect(jsonPath("$.tasksByPriority.high").value(3))
+                .andExpect(jsonPath("$.totalTasks").value(10))
+                .andExpect(jsonPath("$.overdue").value(1))
+                .andExpect(jsonPath("$.completionPercentage").value(50.0));
     }
 }
