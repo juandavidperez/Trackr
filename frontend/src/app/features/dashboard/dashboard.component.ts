@@ -44,13 +44,64 @@ Chart.register(ArcElement, Tooltip, Legend, DoughnutController);
         Welcome back, {{ authService.currentUser()?.name ?? 'User' }}.
       </p>
 
-      <!-- Loading -->
+      <!-- Loading skeleton -->
       @if (loading()) {
+        <!-- Summary cards skeleton -->
         <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           @for (_ of [1, 2, 3, 4]; track _) {
             <div class="animate-pulse rounded-xl border border-zinc-800/60 bg-zinc-900/50 p-6">
-              <div class="h-4 w-24 rounded bg-zinc-800"></div>
+              <div class="flex items-center justify-between">
+                <div class="h-4 w-24 rounded bg-zinc-800"></div>
+                <div class="h-9 w-9 rounded-lg bg-zinc-800/60"></div>
+              </div>
               <div class="mt-3 h-8 w-16 rounded bg-zinc-800"></div>
+            </div>
+          }
+        </div>
+
+        <!-- Chart + Stats skeleton -->
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+          <div class="animate-pulse rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6">
+            <div class="h-4 w-32 rounded bg-zinc-800"></div>
+            <div class="mx-auto mt-6 h-40 w-40 rounded-full bg-zinc-800/40"></div>
+            <div class="mt-4 flex justify-center gap-4">
+              @for (_ of [1, 2, 3]; track _) {
+                <div class="h-3 w-16 rounded bg-zinc-800/30"></div>
+              }
+            </div>
+          </div>
+          <div class="animate-pulse rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 lg:col-span-2">
+            <div class="h-4 w-24 rounded bg-zinc-800"></div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              @for (_ of [1, 2, 3, 4]; track _) {
+                <div class="rounded-lg border border-zinc-800/40 bg-zinc-950/40 px-4 py-3">
+                  <div class="h-3 w-20 rounded bg-zinc-800/40"></div>
+                  <div class="mt-2 h-7 w-12 rounded bg-zinc-800"></div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Task lists skeleton -->
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+          @for (_ of [1, 2]; track _) {
+            <div class="animate-pulse rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-zinc-800"></div>
+                <div class="h-4 w-28 rounded bg-zinc-800"></div>
+              </div>
+              <div class="mt-4 space-y-2">
+                @for (c of [1, 2, 3]; track c) {
+                  <div class="rounded-lg border border-zinc-800/40 bg-zinc-950/30 p-3">
+                    <div class="h-4 w-3/4 rounded bg-zinc-800/60"></div>
+                    <div class="mt-2 flex gap-2">
+                      <div class="h-3 w-16 rounded bg-zinc-800/30"></div>
+                      <div class="h-3 w-20 rounded bg-zinc-800/30"></div>
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>

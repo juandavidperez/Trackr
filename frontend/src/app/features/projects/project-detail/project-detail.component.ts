@@ -76,29 +76,53 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
   ],
   template: `
     <div class="animate-fade-in">
-      <!-- Loading -->
+      <!-- Loading skeleton -->
       @if (loading()) {
-        <div class="flex items-center justify-center py-20">
-          <svg
-            class="h-8 w-8 animate-spin text-indigo-500"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            ></path>
-          </svg>
+        <div>
+          <!-- Header skeleton -->
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div class="h-4 w-28 animate-pulse rounded bg-zinc-800/60"></div>
+              <div class="mt-3 h-7 w-56 animate-pulse rounded bg-zinc-800"></div>
+              <div class="mt-2 h-4 w-80 animate-pulse rounded bg-zinc-800/40"></div>
+            </div>
+            <div class="flex gap-2">
+              <div class="h-10 w-28 animate-pulse rounded-lg bg-zinc-800/60"></div>
+              <div class="h-10 w-28 animate-pulse rounded-lg bg-zinc-800/60"></div>
+            </div>
+          </div>
+
+          <!-- Filter bar skeleton -->
+          <div class="mt-6 flex gap-3">
+            <div class="h-10 w-64 animate-pulse rounded-lg bg-zinc-800/40"></div>
+            <div class="h-10 w-32 animate-pulse rounded-lg bg-zinc-800/40"></div>
+            <div class="h-10 w-32 animate-pulse rounded-lg bg-zinc-800/40"></div>
+          </div>
+
+          <!-- Kanban columns skeleton -->
+          <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            @for (col of [1, 2, 3]; track col) {
+              <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4">
+                <div class="mb-4 flex items-center justify-between">
+                  <div class="h-5 w-24 animate-pulse rounded bg-zinc-800"></div>
+                  <div class="h-5 w-6 animate-pulse rounded-full bg-zinc-800/60"></div>
+                </div>
+                @for (card of col === 2 ? [1, 2] : [1, 2, 3]; track card) {
+                  <div class="mb-3 rounded-lg border border-zinc-800/40 bg-zinc-900/50 p-4">
+                    <div class="h-4 w-3/4 animate-pulse rounded bg-zinc-800"></div>
+                    <div class="mt-3 flex items-center gap-2">
+                      <div class="h-5 w-14 animate-pulse rounded-full bg-zinc-800/40"></div>
+                      <div class="h-5 w-16 animate-pulse rounded-full bg-zinc-800/40"></div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                      <div class="h-3 w-20 animate-pulse rounded bg-zinc-800/30"></div>
+                      <div class="h-6 w-6 animate-pulse rounded-full bg-zinc-800/40"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
       }
 
