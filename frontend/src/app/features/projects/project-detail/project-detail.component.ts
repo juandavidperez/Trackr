@@ -72,6 +72,29 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
       .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
         transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
       }
+      .board-scroll {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(63, 63, 70, 0.4) transparent;
+      }
+      .board-scroll::-webkit-scrollbar {
+        height: 6px;
+      }
+      .board-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .board-scroll::-webkit-scrollbar-thumb {
+        background: rgba(63, 63, 70, 0.4);
+        border-radius: 3px;
+      }
+      @media (max-width: 1023px) {
+        .board-scroll {
+          scroll-snap-type: x mandatory;
+        }
+        .board-col {
+          scroll-snap-align: start;
+        }
+      }
     `,
   ],
   template: `
@@ -93,16 +116,18 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
           </div>
 
           <!-- Filter bar skeleton -->
-          <div class="mt-6 flex gap-3">
-            <div class="h-10 w-64 animate-pulse rounded-lg bg-zinc-800/40"></div>
-            <div class="h-10 w-32 animate-pulse rounded-lg bg-zinc-800/40"></div>
-            <div class="h-10 w-32 animate-pulse rounded-lg bg-zinc-800/40"></div>
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div class="h-10 w-full animate-pulse rounded-lg bg-zinc-800/40 sm:w-64"></div>
+            <div class="flex gap-3">
+              <div class="h-10 w-full animate-pulse rounded-lg bg-zinc-800/40 sm:w-32"></div>
+              <div class="h-10 w-full animate-pulse rounded-lg bg-zinc-800/40 sm:w-32"></div>
+            </div>
           </div>
 
           <!-- Kanban columns skeleton -->
-          <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="board-scroll mt-6 flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
             @for (col of [1, 2, 3]; track col) {
-              <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4">
+              <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-4 lg:w-auto lg:shrink">
                 <div class="mb-4 flex items-center justify-between">
                   <div class="h-5 w-24 animate-pulse rounded bg-zinc-800"></div>
                   <div class="h-5 w-6 animate-pulse rounded-full bg-zinc-800/60"></div>
@@ -456,9 +481,9 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         </div>
 
         <!-- Task Board -->
-        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="board-scroll mt-6 flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
           @for (col of columns(); track col.status) {
-            <div class="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4">
+            <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 lg:w-auto lg:shrink">
               <!-- Column header -->
               <div class="mb-4 flex items-center gap-2.5">
                 <div class="h-2.5 w-2.5 rounded-full" [ngClass]="col.dotColor"></div>
@@ -487,7 +512,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
                     [style.animation-delay]="i * 50 + 'ms'"
                   >
                     <div class="flex items-start justify-between gap-2">
-                      <p class="text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                      <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
                       <button
                         (click)="openEditTask(task)"
                         class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100"
@@ -520,13 +545,13 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
                       </span>
 
                       @if (task.assigneeName) {
-                        <span class="flex items-center gap-1.5 text-xs text-zinc-500">
+                        <span class="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500">
                           <span
-                            class="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400"
+                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400"
                           >
                             {{ getInitials(task.assigneeName) }}
                           </span>
-                          {{ task.assigneeName }}
+                          <span class="truncate">{{ task.assigneeName }}</span>
                         </span>
                       }
                     </div>
