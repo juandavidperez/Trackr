@@ -18,16 +18,6 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
   imports: [RouterLink, NgClass, ReactiveFormsModule, CdkDropList, CdkDrag, TaskFormModalComponent],
   styles: [
     `
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -37,7 +27,7 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         }
       }
       .animate-fade-in-up {
-        animation: fadeInUp 0.4s ease-out both;
+        animation: fadeIn 0.3s ease-out both;
       }
       .animate-fade-in {
         animation: fadeIn 0.3s ease-out both;
@@ -51,18 +41,17 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         padding-right: 1.75rem;
       }
       .cdk-drag-preview {
+        padding: 1rem;
         border-radius: 0.5rem;
         border: 1px solid rgba(99, 102, 241, 0.4);
         background: rgba(24, 24, 27, 0.95);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        transform: rotate(2deg);
       }
       .cdk-drag-placeholder {
         border-radius: 0.5rem;
         border: 2px dashed rgba(99, 102, 241, 0.3);
         background: rgba(99, 102, 241, 0.05);
         min-height: 80px;
-        transition: all 0.2s ease;
       }
       .cdk-drag-placeholder * {
         visibility: hidden;
@@ -70,12 +59,8 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
       .cdk-drag-animating {
         transition: none !important;
       }
-      .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
-        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
-      }
       .dropped-task {
         animation: none !important;
-        transition: none !important;
       }
       .board-scroll {
         -webkit-overflow-scrolling: touch;
@@ -480,137 +465,134 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
 
         <!-- Task Board -->
         <div class="board-scroll mt-6 flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
-          @for (col of columns(); track col.status) {
-            <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 lg:w-auto lg:shrink">
-              <!-- Column header -->
-              <div class="mb-4 flex items-center gap-2.5">
-                <div class="h-2.5 w-2.5 rounded-full" [ngClass]="col.dotColor"></div>
-                <h2 class="text-sm font-semibold text-zinc-300">{{ col.label }}</h2>
-                <span
-                  class="ml-auto rounded-full bg-zinc-800/60 px-2 py-0.5 text-xs font-medium text-zinc-500"
-                >
-                  {{ col.tasks.length }}
-                </span>
-              </div>
-
-              <!-- Task cards -->
-              <div
-                class="space-y-3 min-h-[60px]"
-                cdkDropList
-                [id]="'col-' + col.status"
-                [cdkDropListData]="col.status"
-                [cdkDropListConnectedTo]="['col-TODO', 'col-IN_PROGRESS', 'col-DONE']"
-                (cdkDropListDropped)="onTaskDrop($event)"
-              >
-                @for (task of col.tasks; track task.id; let i = $index) {
-                  <div
-                    cdkDrag
-                    [cdkDragData]="task"
-                    class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing"
-                    [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)"
-                    [class.dropped-task]="recentlyDroppedIds().has(task.id)"
-                    [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''"
-                  >
-                    <div class="flex items-start justify-between gap-2">
-                      <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
-                      <button
-                        (click)="openEditTask(task)"
-                        class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100"
-                        title="Edit task"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    @if (task.description) {
-                      <p class="mt-1 line-clamp-1 text-xs text-zinc-600">{{ task.description }}</p>
-                    }
-
-                    <!-- Priority + Assignee -->
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                      <span
-                        class="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                        [ngClass]="{
-                          'border-rose-500/20 bg-rose-500/10 text-rose-400':
-                            task.priority === 'HIGH',
-                          'border-amber-500/20 bg-amber-500/10 text-amber-400':
-                            task.priority === 'MEDIUM',
-                          'border-emerald-500/20 bg-emerald-500/10 text-emerald-400':
-                            task.priority === 'LOW',
-                        }"
-                      >
-                        {{ task.priority }}
-                      </span>
-
-                      @if (task.assigneeName) {
-                        <span class="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500">
-                          <span
-                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400"
-                          >
-                            {{ getInitials(task.assigneeName) }}
-                          </span>
-                          <span class="truncate">{{ task.assigneeName }}</span>
-                        </span>
-                      }
-                    </div>
-
-                    <!-- Due date + Status change -->
-                    <div class="mt-3 flex items-center justify-between gap-2">
-                      @if (task.dueDate) {
-                        <span
-                          class="flex items-center gap-1 text-xs"
-                          [ngClass]="isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-3 w-3"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                            />
-                          </svg>
-                          {{ formatDate(task.dueDate) }}
-                        </span>
-                      } @else {
-                        <span></span>
-                      }
-
-                      <select
-                        class="styled-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none"
-                        [value]="task.status"
-                        (change)="changeStatus(task.id, $any($event.target).value)"
-                      >
-                        <option value="TODO">Todo</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="DONE">Done</option>
-                      </select>
-                    </div>
-                  </div>
-                } @empty {
-                  <div class="flex flex-col items-center py-8 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 56 56" fill="none">
-                      <!-- Clipboard -->
-                      <rect x="14" y="8" width="28" height="38" rx="4" class="fill-zinc-800/40 stroke-zinc-700/30" stroke-width="1.2"/>
-                      <rect x="20" y="4" width="16" height="8" rx="3" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.2"/>
-                      <!-- Lines -->
-                      <rect x="20" y="20" width="16" height="2" rx="1" class="fill-zinc-700/40"/>
-                      <rect x="20" y="26" width="12" height="2" rx="1" class="fill-zinc-700/30"/>
-                      <rect x="20" y="32" width="14" height="2" rx="1" class="fill-zinc-700/20"/>
-                    </svg>
-                    <p class="mt-2 text-xs text-zinc-600">No tasks here</p>
-                  </div>
-                }
-              </div>
+          <!-- TODO Column -->
+          <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 lg:w-auto lg:shrink">
+            <div class="mb-4 flex items-center gap-2.5">
+              <div class="h-2.5 w-2.5 rounded-full bg-zinc-400"></div>
+              <h2 class="text-sm font-semibold text-zinc-300">Todo</h2>
+              <span class="ml-auto rounded-full bg-zinc-800/60 px-2 py-0.5 text-xs font-medium text-zinc-500">{{ todoTasks().length }}</span>
             </div>
-          }
+            <div
+              class="space-y-3 min-h-[60px]"
+              cdkDropList
+              [cdkDropListData]="todoStatus"
+              [cdkDropListConnectedTo]="[inProgressList, doneList]"
+              cdkDropListSortingDisabled
+              (cdkDropListDropped)="onTaskDrop($event)"
+              #todoList="cdkDropList"
+            >
+              @for (task of todoTasks(); track task.id; let i = $index) {
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                    <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
+                    </button>
+                  </div>
+                  @if (task.description) { <p class="mt-1 line-clamp-1 text-xs text-zinc-600">{{ task.description }}</p> }
+                  <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" [ngClass]="{'border-rose-500/20 bg-rose-500/10 text-rose-400': task.priority === 'HIGH', 'border-amber-500/20 bg-amber-500/10 text-amber-400': task.priority === 'MEDIUM', 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400': task.priority === 'LOW'}">{{ task.priority }}</span>
+                    @if (task.assigneeName) { <span class="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400">{{ getInitials(task.assigneeName) }}</span><span class="truncate">{{ task.assigneeName }}</span></span> }
+                  </div>
+                  <div class="mt-3 flex items-center justify-between gap-2">
+                    @if (task.dueDate) { <span class="flex items-center gap-1 text-xs" [ngClass]="isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>{{ formatDate(task.dueDate) }}</span> } @else { <span></span> }
+                    <select class="styled-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none" [value]="task.status" (change)="changeStatus(task.id, $any($event.target).value)"><option value="TODO">Todo</option><option value="IN_PROGRESS">In Progress</option><option value="DONE">Done</option></select>
+                  </div>
+                </div>
+              } @empty {
+                <div class="flex flex-col items-center py-8 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 56 56" fill="none"><rect x="14" y="8" width="28" height="38" rx="4" class="fill-zinc-800/40 stroke-zinc-700/30" stroke-width="1.2"/><rect x="20" y="4" width="16" height="8" rx="3" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.2"/><rect x="20" y="20" width="16" height="2" rx="1" class="fill-zinc-700/40"/><rect x="20" y="26" width="12" height="2" rx="1" class="fill-zinc-700/30"/><rect x="20" y="32" width="14" height="2" rx="1" class="fill-zinc-700/20"/></svg>
+                  <p class="mt-2 text-xs text-zinc-600">No tasks here</p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- IN_PROGRESS Column -->
+          <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 lg:w-auto lg:shrink">
+            <div class="mb-4 flex items-center gap-2.5">
+              <div class="h-2.5 w-2.5 rounded-full bg-indigo-400"></div>
+              <h2 class="text-sm font-semibold text-zinc-300">In Progress</h2>
+              <span class="ml-auto rounded-full bg-zinc-800/60 px-2 py-0.5 text-xs font-medium text-zinc-500">{{ inProgressTasks().length }}</span>
+            </div>
+            <div
+              class="space-y-3 min-h-[60px]"
+              cdkDropList
+              [cdkDropListData]="inProgressStatus"
+              [cdkDropListConnectedTo]="[todoList, doneList]"
+              cdkDropListSortingDisabled
+              (cdkDropListDropped)="onTaskDrop($event)"
+              #inProgressList="cdkDropList"
+            >
+              @for (task of inProgressTasks(); track task.id; let i = $index) {
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                    <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
+                    </button>
+                  </div>
+                  @if (task.description) { <p class="mt-1 line-clamp-1 text-xs text-zinc-600">{{ task.description }}</p> }
+                  <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" [ngClass]="{'border-rose-500/20 bg-rose-500/10 text-rose-400': task.priority === 'HIGH', 'border-amber-500/20 bg-amber-500/10 text-amber-400': task.priority === 'MEDIUM', 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400': task.priority === 'LOW'}">{{ task.priority }}</span>
+                    @if (task.assigneeName) { <span class="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400">{{ getInitials(task.assigneeName) }}</span><span class="truncate">{{ task.assigneeName }}</span></span> }
+                  </div>
+                  <div class="mt-3 flex items-center justify-between gap-2">
+                    @if (task.dueDate) { <span class="flex items-center gap-1 text-xs" [ngClass]="isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>{{ formatDate(task.dueDate) }}</span> } @else { <span></span> }
+                    <select class="styled-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none" [value]="task.status" (change)="changeStatus(task.id, $any($event.target).value)"><option value="TODO">Todo</option><option value="IN_PROGRESS">In Progress</option><option value="DONE">Done</option></select>
+                  </div>
+                </div>
+              } @empty {
+                <div class="flex flex-col items-center py-8 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 56 56" fill="none"><rect x="14" y="8" width="28" height="38" rx="4" class="fill-zinc-800/40 stroke-zinc-700/30" stroke-width="1.2"/><rect x="20" y="4" width="16" height="8" rx="3" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.2"/><rect x="20" y="20" width="16" height="2" rx="1" class="fill-zinc-700/40"/><rect x="20" y="26" width="12" height="2" rx="1" class="fill-zinc-700/30"/><rect x="20" y="32" width="14" height="2" rx="1" class="fill-zinc-700/20"/></svg>
+                  <p class="mt-2 text-xs text-zinc-600">No tasks here</p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- DONE Column -->
+          <div class="board-col w-[280px] shrink-0 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-4 lg:w-auto lg:shrink">
+            <div class="mb-4 flex items-center gap-2.5">
+              <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
+              <h2 class="text-sm font-semibold text-zinc-300">Done</h2>
+              <span class="ml-auto rounded-full bg-zinc-800/60 px-2 py-0.5 text-xs font-medium text-zinc-500">{{ doneTasks().length }}</span>
+            </div>
+            <div
+              class="space-y-3 min-h-[60px]"
+              cdkDropList
+              [cdkDropListData]="doneStatus"
+              [cdkDropListConnectedTo]="[todoList, inProgressList]"
+              cdkDropListSortingDisabled
+              (cdkDropListDropped)="onTaskDrop($event)"
+              #doneList="cdkDropList"
+            >
+              @for (task of doneTasks(); track task.id; let i = $index) {
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
+                    <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
+                    </button>
+                  </div>
+                  @if (task.description) { <p class="mt-1 line-clamp-1 text-xs text-zinc-600">{{ task.description }}</p> }
+                  <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" [ngClass]="{'border-rose-500/20 bg-rose-500/10 text-rose-400': task.priority === 'HIGH', 'border-amber-500/20 bg-amber-500/10 text-amber-400': task.priority === 'MEDIUM', 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400': task.priority === 'LOW'}">{{ task.priority }}</span>
+                    @if (task.assigneeName) { <span class="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-[10px] font-semibold text-indigo-400">{{ getInitials(task.assigneeName) }}</span><span class="truncate">{{ task.assigneeName }}</span></span> }
+                  </div>
+                  <div class="mt-3 flex items-center justify-between gap-2">
+                    @if (task.dueDate) { <span class="flex items-center gap-1 text-xs" [ngClass]="isOverdue(task.dueDate) ? 'text-rose-400' : 'text-zinc-500'"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>{{ formatDate(task.dueDate) }}</span> } @else { <span></span> }
+                    <select class="styled-select rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none" [value]="task.status" (change)="changeStatus(task.id, $any($event.target).value)"><option value="TODO">Todo</option><option value="IN_PROGRESS">In Progress</option><option value="DONE">Done</option></select>
+                  </div>
+                </div>
+              } @empty {
+                <div class="flex flex-col items-center py-8 text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 56 56" fill="none"><rect x="14" y="8" width="28" height="38" rx="4" class="fill-zinc-800/40 stroke-zinc-700/30" stroke-width="1.2"/><rect x="20" y="4" width="16" height="8" rx="3" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.2"/><rect x="20" y="20" width="16" height="2" rx="1" class="fill-zinc-700/40"/><rect x="20" y="26" width="12" height="2" rx="1" class="fill-zinc-700/30"/><rect x="20" y="32" width="14" height="2" rx="1" class="fill-zinc-700/20"/></svg>
+                  <p class="mt-2 text-xs text-zinc-600">No tasks here</p>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       }
 
@@ -678,26 +660,10 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   );
   readonly doneTasks = computed(() => this.tasks().filter((t) => t.status === 'DONE'));
 
-  readonly columns = computed(() => [
-    {
-      status: 'TODO' as TaskStatus,
-      label: 'Todo',
-      dotColor: 'bg-zinc-400',
-      tasks: this.todoTasks(),
-    },
-    {
-      status: 'IN_PROGRESS' as TaskStatus,
-      label: 'In Progress',
-      dotColor: 'bg-indigo-400',
-      tasks: this.inProgressTasks(),
-    },
-    {
-      status: 'DONE' as TaskStatus,
-      label: 'Done',
-      dotColor: 'bg-emerald-400',
-      tasks: this.doneTasks(),
-    },
-  ]);
+  // Stable status references for cdkDropListData (avoids re-creating objects)
+  readonly todoStatus: TaskStatus = 'TODO';
+  readonly inProgressStatus: TaskStatus = 'IN_PROGRESS';
+  readonly doneStatus: TaskStatus = 'DONE';
 
   readonly addMemberForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
