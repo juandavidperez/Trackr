@@ -20,6 +20,7 @@ public class TaskResponse {
     private LocalDate dueDate;
     private String assigneeName;
     private Long projectId;
+    private String projectName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

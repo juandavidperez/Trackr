@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { ProjectResponse } from '../../../core/models/project.model';
 
 @Component({
@@ -81,36 +82,32 @@ import { ProjectResponse } from '../../../core/models/project.model';
       <!-- Empty state -->
       @if (!loading() && projects().length === 0) {
         <div class="mt-16 flex flex-col items-center justify-center text-center">
-          <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-800/50">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-8 w-8 text-zinc-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="1.5"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-              />
+          <!-- Illustration -->
+          <div class="relative">
+            <div class="absolute -inset-4 rounded-full bg-indigo-500/5"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="relative h-28 w-28" viewBox="0 0 120 120" fill="none">
+              <!-- Back folder -->
+              <rect x="18" y="38" width="84" height="56" rx="6" class="fill-zinc-800/60 stroke-zinc-700/40" stroke-width="1.5"/>
+              <!-- Front folder -->
+              <path d="M18 50C18 46.6863 20.6863 44 24 44H46L52 38H96C99.3137 38 102 40.6863 102 44V82C102 85.3137 99.3137 88 96 88H24C20.6863 88 18 85.3137 18 82V50Z" class="fill-zinc-900 stroke-zinc-700/60" stroke-width="1.5"/>
+              <!-- Plus icon in center -->
+              <circle cx="60" cy="66" r="14" class="fill-zinc-800/80 stroke-zinc-600/40" stroke-width="1.5"/>
+              <path d="M54 66H66M60 60V72" class="stroke-zinc-500" stroke-width="2" stroke-linecap="round"/>
+              <!-- Decorative dots -->
+              <circle cx="32" cy="30" r="2" class="fill-zinc-800/60"/>
+              <circle cx="90" cy="32" r="1.5" class="fill-indigo-500/20"/>
+              <circle cx="28" cy="96" r="1.5" class="fill-indigo-500/15"/>
             </svg>
           </div>
-          <h3 class="mt-4 text-lg font-semibold text-white">No projects yet</h3>
-          <p class="mt-1 text-sm text-zinc-500">Create your first project to get started</p>
+          <h3 class="mt-6 text-lg font-semibold text-white">No projects yet</h3>
+          <p class="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">
+            Projects help you organize tasks, collaborate with your team, and track progress. Create your first one to get started.
+          </p>
           <button
             (click)="openModal()"
             class="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-500"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Create Project
@@ -296,6 +293,7 @@ import { ProjectResponse } from '../../../core/models/project.model';
 export class ProjectListComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
   readonly projects = signal<ProjectResponse[]>([]);
@@ -333,11 +331,14 @@ export class ProjectListComponent implements OnInit {
       next: () => {
         this.creating.set(false);
         this.showModal.set(false);
+        this.toast.success('Project created successfully');
         this.loadProjects();
       },
       error: (err) => {
         this.creating.set(false);
-        this.error.set(err.error?.message ?? 'Failed to create project');
+        const msg = err.error?.message ?? 'Failed to create project';
+        this.error.set(msg);
+        this.toast.error(msg);
       },
     });
   }
@@ -349,7 +350,10 @@ export class ProjectListComponent implements OnInit {
         this.projects.set(page.content);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.toast.error('Failed to load projects');
+      },
     });
   }
 }

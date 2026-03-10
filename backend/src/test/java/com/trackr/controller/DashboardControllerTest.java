@@ -12,6 +12,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,7 +41,8 @@ class DashboardControllerTest {
     private DashboardResponse sampleResponse() {
         return new DashboardResponse(
                 new DashboardResponse.TasksByStatus(3, 2, 5),
-                1, 10, 2, 4
+                1, 10, 2, 4,
+                Collections.emptyList(), Collections.emptyList()
         );
     }
 
@@ -62,7 +65,8 @@ class DashboardControllerTest {
     void getStats_noData_returnsZeros() throws Exception {
         DashboardResponse emptyResponse = new DashboardResponse(
                 new DashboardResponse.TasksByStatus(0, 0, 0),
-                0, 0, 0, 0
+                0, 0, 0, 0,
+                Collections.emptyList(), Collections.emptyList()
         );
         when(dashboardService.getStats(any())).thenReturn(emptyResponse);
 

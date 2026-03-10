@@ -54,7 +54,7 @@ class TaskControllerTest {
     private TaskResponse sampleResponse() {
         return new TaskResponse(1L, "Test Task", "Description", TaskStatus.TODO,
                 TaskPriority.HIGH, LocalDate.now().plusDays(5), "Alice",
-                10L, LocalDateTime.now(), LocalDateTime.now());
+                10L, "Test Project", LocalDateTime.now(), LocalDateTime.now());
     }
 
     // --- list endpoint: query params ---

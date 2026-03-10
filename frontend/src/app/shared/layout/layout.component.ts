@@ -1,11 +1,14 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastComponent } from '../components/toast/toast.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkScrollable, ToastComponent],
   template: `
+    <app-toast />
     <div class="flex h-screen overflow-hidden bg-zinc-950 text-zinc-200">
       <!-- Mobile overlay -->
       @if (sidebarOpen()) {
@@ -22,14 +25,24 @@ import { AuthService } from '../../core/services/auth.service';
         [class.translate-x-0]="sidebarOpen()"
       >
         <!-- Logo -->
-        <div class="flex h-16 shrink-0 items-center gap-3 border-b border-zinc-800/60 px-6">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-              <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
-            </svg>
+        <div class="flex h-16 shrink-0 items-center justify-between border-b border-zinc-800/60 px-6">
+          <div class="flex items-center gap-3">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <span class="text-lg font-semibold tracking-tight text-white">Trackr</span>
           </div>
-          <span class="text-lg font-semibold tracking-tight text-white">Trackr</span>
+          <button
+            (click)="sidebarOpen.set(false)"
+            class="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800/50 hover:text-zinc-300 lg:hidden"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
 
         <!-- Navigation -->
@@ -37,6 +50,7 @@ import { AuthService } from '../../core/services/auth.service';
           <a
             routerLink="/dashboard"
             routerLinkActive="bg-zinc-800/70 text-white"
+            (click)="sidebarOpen.set(false)"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -48,6 +62,7 @@ import { AuthService } from '../../core/services/auth.service';
           <a
             routerLink="/projects"
             routerLinkActive="bg-zinc-800/70 text-white"
+            (click)="sidebarOpen.set(false)"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -59,6 +74,7 @@ import { AuthService } from '../../core/services/auth.service';
           <a
             routerLink="/tasks"
             routerLinkActive="bg-zinc-800/70 text-white"
+            (click)="sidebarOpen.set(false)"
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -113,7 +129,7 @@ import { AuthService } from '../../core/services/auth.service';
         </header>
 
         <!-- Page content -->
-        <main class="flex-1 overflow-y-auto p-6 lg:p-8">
+        <main cdkScrollable class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <router-outlet />
         </main>
       </div>

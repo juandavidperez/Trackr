@@ -102,6 +102,12 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
+    public Page<TaskResponse> listMyTasks(Long userId, Long projectId, TaskStatus status,
+                                          TaskPriority priority, String search, Pageable pageable) {
+        return taskRepository.findMyTasks(userId, projectId, status, priority, search, pageable)
+                .map(this::toResponse);
+    }
+
     private Project findProjectOrThrow(Long id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
@@ -130,6 +136,7 @@ public class TaskService {
                 task.getDueDate(),
                 task.getAssignee() != null ? task.getAssignee().getName() : null,
                 task.getProject().getId(),
+                task.getProject().getName(),
                 task.getCreatedAt(),
                 task.getUpdatedAt()
         );
