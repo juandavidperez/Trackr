@@ -68,10 +68,14 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
         visibility: hidden;
       }
       .cdk-drag-animating {
-        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+        transition: none !important;
       }
       .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
         transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+      }
+      .dropped-task {
+        animation: none !important;
+        transition: none !important;
       }
       .board-scroll {
         -webkit-overflow-scrolling: touch;
@@ -502,8 +506,10 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
                   <div
                     cdkDrag
                     [cdkDragData]="task"
-                    class="group/card animate-fade-in-up cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700/60 active:cursor-grabbing"
-                    [style.animation-delay]="i * 50 + 'ms'"
+                    class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing"
+                    [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)"
+                    [class.dropped-task]="recentlyDroppedIds().has(task.id)"
+                    [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''"
                   >
                     <div class="flex items-start justify-between gap-2">
                       <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
@@ -635,6 +641,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   readonly project = signal<ProjectResponse | null>(null);
   readonly tasks = signal<TaskResponse[]>([]);
   readonly members = signal<ProjectMember[]>([]);
+  readonly recentlyDroppedIds = signal<Set<number>>(new Set());
   readonly showTaskModal = signal(false);
   readonly taskModalMode = signal<'create' | 'edit'>('create');
   readonly editingTask = signal<TaskResponse | null>(null);
@@ -840,13 +847,26 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     const newStatus = event.container.data;
     if (task.status === newStatus) return;
 
-    // Defer the optimistic update so CDK finishes its drop animation
-    // before Angular re-renders the columns via @for
+    // Mark as recently dropped to skip fade-in animation on re-render
+    this.recentlyDroppedIds.update((ids) => {
+      const next = new Set(ids);
+      next.add(task.id);
+      return next;
+    });
+
+    // Immediate optimistic update
+    this.tasks.update((tasks) =>
+      tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
+    );
+
+    // Clear dropped marker after render settles
     setTimeout(() => {
-      this.tasks.update((tasks) =>
-        tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
-      );
-    }, 250);
+      this.recentlyDroppedIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(task.id);
+        return next;
+      });
+    }, 50);
 
     this.taskService.updateStatus(task.id, { status: newStatus }).subscribe({
       next: (updatedTask) => {
