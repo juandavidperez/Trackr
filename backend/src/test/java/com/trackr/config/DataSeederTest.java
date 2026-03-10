@@ -61,9 +61,9 @@ class DataSeederTest {
 
         dataSeeder.run();
 
-        verify(userRepository, times(3)).save(any());
-        verify(projectRepository, times(2)).save(any());
-        verify(taskRepository, times(7)).save(any());
-        verify(passwordEncoder, times(3)).encode("password123");
+        verify(userRepository, times(6)).save(any());
+        verify(projectRepository, times(5)).save(any());
+        verify(taskRepository, times(47)).save(any());
+        verify(passwordEncoder, times(6)).encode("password123");
     }
 }
