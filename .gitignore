@@ -36,7 +36,6 @@ frontend/*.tgz
 # =====================
 .env
 *.env.local
-backend/src/main/resources/application-dev.yml
 backend/src/main/resources/application-local.yml
 
 # =====================
