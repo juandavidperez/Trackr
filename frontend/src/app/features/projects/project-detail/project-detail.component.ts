@@ -840,10 +840,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     const newStatus = event.container.data;
     if (task.status === newStatus) return;
 
-    // Optimistic update: move task immediately in UI
-    this.tasks.update((tasks) =>
-      tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
-    );
+    // Defer the optimistic update so CDK finishes its drop animation
+    // before Angular re-renders the columns via @for
+    setTimeout(() => {
+      this.tasks.update((tasks) =>
+        tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
+      );
+    }, 250);
 
     this.taskService.updateStatus(task.id, { status: newStatus }).subscribe({
       next: (updatedTask) => {
