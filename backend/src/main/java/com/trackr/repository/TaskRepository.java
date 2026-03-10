@@ -59,4 +59,18 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
            "WHERE t.assignee.id = :assigneeId AND t.status <> 'DONE' " +
            "ORDER BY t.createdAt DESC")
     List<Task> findRecentByAssignee(@Param("assigneeId") Long assigneeId, Pageable pageable);
+
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee LEFT JOIN FETCH t.project " +
+           "WHERE t.assignee.id = :assigneeId " +
+           "AND (:projectId IS NULL OR t.project.id = :projectId) " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority) " +
+           "AND (:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+           "OR LOWER(t.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
+    Page<Task> findMyTasks(@Param("assigneeId") Long assigneeId,
+                           @Param("projectId") Long projectId,
+                           @Param("status") TaskStatus status,
+                           @Param("priority") TaskPriority priority,
+                           @Param("search") String search,
+                           Pageable pageable);
 }

@@ -28,6 +28,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'tasks',
+        title: 'My Tasks - Trackr',
+        loadComponent: () =>
+          import('./features/tasks/task-list/task-list.component').then(
+            (m) => m.TaskListComponent,
+          ),
+      },
+      {
         path: 'projects/:id',
         title: 'Project - Trackr',
         loadComponent: () =>

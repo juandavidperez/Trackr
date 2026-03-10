@@ -1,11 +1,12 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastComponent } from '../components/toast/toast.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkScrollable, ToastComponent],
   template: `
     <app-toast />
     <div class="flex h-screen overflow-hidden bg-zinc-950 text-zinc-200">
@@ -128,7 +129,7 @@ import { ToastComponent } from '../components/toast/toast.component';
         </header>
 
         <!-- Page content -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main cdkScrollable class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <router-outlet />
         </main>
       </div>

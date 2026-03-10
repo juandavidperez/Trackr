@@ -22,6 +22,17 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    @GetMapping("/api/tasks/me")
+    public ResponseEntity<Page<TaskResponse>> myTasks(
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) TaskPriority priority,
+            @RequestParam(required = false) String search,
+            Pageable pageable,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(taskService.listMyTasks(user.getId(), projectId, status, priority, search, pageable));
+    }
+
     @PostMapping("/api/projects/{projectId}/tasks")
     public ResponseEntity<TaskResponse> create(
             @PathVariable Long projectId,

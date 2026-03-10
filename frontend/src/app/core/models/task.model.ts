@@ -35,6 +35,7 @@ export interface TaskResponse {
   dueDate: string | null;
   assigneeName: string | null;
   projectId: number;
+  projectName: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +44,16 @@ export interface TaskFilterParams {
   status?: TaskStatus;
   priority?: TaskPriority;
   assigneeId?: number;
+  search?: string;
+  sort?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface MyTaskFilterParams {
+  projectId?: number;
+  status?: TaskStatus;
+  priority?: TaskPriority;
   search?: string;
   sort?: string;
   page?: number;
