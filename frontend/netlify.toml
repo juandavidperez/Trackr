@@ -1,5 +1,5 @@
 [build]
-  command = "npx ng build --configuration production --output-mode static --no-ssr && find dist/ -name '*.js' -exec sed -i \"s|__API_URL__|$API_URL|g\" {} +"
+  command = "npx ng build --configuration production && cp dist/frontend/browser/index.csr.html dist/frontend/browser/index.html && find dist/ -name '*.js' -exec sed -i \"s|__API_URL__|$API_URL|g\" {} +"
   publish = "dist/frontend/browser"
 
 [[redirects]]
