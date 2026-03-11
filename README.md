@@ -2,13 +2,8 @@
 
 A full-stack project management application with Kanban boards, team collaboration, and task tracking. Built with Angular 21 + Spring Boot 3.
 
-> **Live Demo:** [https://trackr-app.vercel.app](https://trackr-app.vercel.app) · **API Docs:** [https://trackr-api.onrender.com/swagger-ui/index.html](https://trackr-api.onrender.com/swagger-ui/index.html)
->
-> *(Update these URLs once deployed)*
+> **Live Demo:** [https://trackr-pm.netlify.app](https://trackr-pm.netlify.app) · **API:** [https://trackr-api-kxgo.onrender.com](https://trackr-api-kxgo.onrender.com) · **Swagger:** [API Docs](https://trackr-api-kxgo.onrender.com/swagger-ui/index.html)
 
-<!-- Screenshot: Dashboard view showing task stats cards (todo/in-progress/done counts),
-     overdue tasks list, recent activity, and the completion chart.
-     Full page with sidebar visible. -->
 ![Trackr Dashboard](docs/screenshots/dashboard.png)
 
 ---
@@ -32,43 +27,22 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 
 ## Screenshots
 
-<!-- Screenshot: Login page with dark theme, email/password fields, "Sign in" button,
-     and link to register. Centered card on zinc-950 background. -->
 | Login | Register |
 |-------|----------|
 | ![Login](docs/screenshots/login.png) | ![Register](docs/screenshots/register.png) |
 
-<!-- Screenshot: Dashboard showing the 4 stat cards at top (tasks by status, overdue,
-     active projects, completed last 7 days), overdue task list, recent tasks list,
-     and the bar chart. Sidebar should be visible on the left. -->
-<!-- Screenshot: Project list showing project cards in a grid, each with name,
-     description, owner, member count, and creation date. Include the "New Project"
-     button and the create project modal if possible. -->
 | Dashboard | Projects |
 |-----------|----------|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Projects](docs/screenshots/projects.png) |
 
-<!-- Screenshot: Kanban board with 3 columns (Todo, In Progress, Done), task cards
-     showing title, priority badge (colored), assignee avatar, due date.
-     Show the filter bar above with search, status, priority, and sort dropdowns.
-     Ideally show a card being dragged between columns. -->
-<!-- Screenshot: My Tasks page with the table/list view showing tasks with project name,
-     status badge, priority badge, due date. Filter bar visible at top with project
-     dropdown, status, priority filters. -->
 | Kanban Board | My Tasks |
 |-------------|----------|
 | ![Board](docs/screenshots/board.png) | ![Tasks](docs/screenshots/tasks.png) |
 
-<!-- Screenshot: Project detail with members panel open, showing owner and members list,
-     "Add member by email" form at the bottom. -->
-<!-- Screenshot: Mobile view of the Kanban board showing horizontal scroll with
-     one column visible, collapsible sidebar closed. Or mobile view of project list. -->
 | Members Panel | Mobile View |
 |--------------|-------------|
 | ![Members](docs/screenshots/members.png) | ![Mobile](docs/screenshots/mobile.png) |
 
-<!-- Screenshot: Swagger UI showing the API endpoints grouped by tag
-     (Authentication, Projects, Tasks, Dashboard), with the JWT auth button visible. -->
 | Swagger API Docs |
 |-----------------|
 | ![Swagger](docs/screenshots/swagger.png) |
@@ -87,7 +61,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 | Testing | Vitest (frontend, 95 tests), JUnit 5 + Mockito (backend, 118 tests) |
 | CI/CD | GitHub Actions |
 | DevOps | Docker, Docker Compose, Nginx |
-| Deploy | Vercel (frontend), Render (backend), Supabase (database) |
+| Deploy | Netlify (frontend), Render (backend), Supabase (database) |
 
 ---
 
@@ -97,7 +71,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 ┌─────────────────┐         ┌──────────────────────┐         ┌────────────┐
 │                 │  HTTP   │                      │   JPA   │            │
 │  Angular SPA    │────────▶│  Spring Boot API     │────────▶│ PostgreSQL │
-│  (Vercel)       │◀────────│  (Render)            │◀────────│ (Supabase) │
+│  (Netlify)      │◀────────│  (Render)            │◀────────│ (Supabase) │
 │                 │  JSON   │                      │         │            │
 └─────────────────┘         └──────────────────────┘         └────────────┘
                                      │
@@ -222,30 +196,28 @@ docker compose down -v     # Stop and reset database
 
 ## API Endpoints
 
-Full interactive documentation available at `/swagger-ui/index.html`.
+Full API documentation available at [Swagger UI](https://trackr-api-kxgo.onrender.com/swagger-ui/index.html).
 
 | Method | Endpoint | Description | Auth |
 |--------|---------|-------------|------|
+| GET | `/api/health` | Health check | No |
 | POST | `/api/auth/register` | Register a new user | No |
 | POST | `/api/auth/login` | Login and receive tokens | No |
 | POST | `/api/auth/refresh` | Refresh access token | No |
-| GET | `/api/me` | Get current user profile | Yes |
-| GET | `/api/health` | Health check | No |
 | GET | `/api/dashboard` | Dashboard statistics | Yes |
 | GET | `/api/projects` | List user's projects (paginated) | Yes |
 | POST | `/api/projects` | Create a project | Yes |
 | GET | `/api/projects/:id` | Get project details | Yes |
 | PUT | `/api/projects/:id` | Update a project | Owner |
 | DELETE | `/api/projects/:id` | Delete a project | Owner |
-| GET | `/api/projects/:id/stats` | Project statistics | Yes |
-| GET | `/api/projects/:id/members` | List project members | Yes |
+| GET | `/api/projects/:id/stats` | Project statistics | Member |
+| GET | `/api/projects/:id/members` | List project members | Member |
 | POST | `/api/projects/:id/members` | Add a member by email | Owner |
 | DELETE | `/api/projects/:id/members/:userId` | Remove a member | Owner |
-| GET | `/api/projects/:id/tasks` | List project tasks (filtered, paginated) | Yes |
-| POST | `/api/projects/:id/tasks` | Create a task | Yes |
 | GET | `/api/tasks/me` | My assigned tasks (filtered, paginated) | Yes |
-| PUT | `/api/tasks/:id` | Update a task | Yes |
-| PATCH | `/api/tasks/:id/status` | Change task status | Yes |
+| POST | `/api/tasks` | Create a task | Member |
+| PUT | `/api/tasks/:id` | Update a task | Member |
+| PATCH | `/api/tasks/:id/status` | Change task status | Member |
 | DELETE | `/api/tasks/:id` | Delete a task | Owner |
 
 ---
