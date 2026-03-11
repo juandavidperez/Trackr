@@ -2,9 +2,7 @@
 
 A full-stack project management application with Kanban boards, team collaboration, and real-time task tracking. Built with Angular and Spring Boot.
 
-> **Live Demo:** [https://trackr-app.vercel.app](https://trackr-app.vercel.app) · **API:** [https://trackr-api.railway.app](https://trackr-api.railway.app)
-
-*(Update these URLs once deployed)*
+> **Live Demo:** [https://trackr-pm.netlify.app](https://trackr-pm.netlify.app) · **API:** [https://trackr-api-kxgo.onrender.com](https://trackr-api-kxgo.onrender.com) · **Swagger:** [API Docs](https://trackr-api-kxgo.onrender.com/swagger-ui.html)
 
 ![Trackr Dashboard](docs/screenshots/dashboard.png)
 
@@ -34,7 +32,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 | Database | PostgreSQL | Relational data with complex relationships (users ↔ projects ↔ tasks) |
 | Auth | Spring Security + JWT | Stateless auth with access/refresh token rotation |
 | DevOps | Docker, Docker Compose | Consistent dev environment, one-command setup |
-| Deploy | Vercel (frontend), Railway (backend + DB) | Zero-config deploys with free tier |
+| Deploy | Netlify (frontend), Render (backend), Supabase (DB) | Free tier hosting with auto-deploy |
 
 ---
 
@@ -44,7 +42,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 ┌─────────────────┐         ┌──────────────────────┐         ┌────────────┐
 │                 │  HTTP   │                      │   JPA   │            │
 │  Angular SPA    │────────▶│  Spring Boot API     │────────▶│ PostgreSQL │
-│  (Vercel)       │◀────────│  (Railway)           │◀────────│ (Railway)  │
+│  (Netlify)      │◀────────│  (Render)            │◀────────│ (Supabase) │
 │                 │  JSON   │                      │         │            │
 └─────────────────┘         └──────────────────────┘         └────────────┘
                                      │
@@ -130,8 +128,8 @@ That's it for Docker. No need to install Java, Node.js, or PostgreSQL locally.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/trackr.git
-cd trackr
+git clone https://github.com/juandavidperez/Trackr.git
+cd Trackr
 ```
 
 ### 2. Configure environment
@@ -205,24 +203,29 @@ This builds optimized images: Angular compiled and served via Nginx, Spring Boot
 
 ## API Endpoints
 
+Full API documentation available at [Swagger UI](https://trackr-api-kxgo.onrender.com/swagger-ui.html).
+
 | Method | Endpoint | Description | Auth |
 |--------|---------|-------------|------|
+| GET | `/api/health` | Health check | No |
 | POST | `/api/auth/register` | Register a new user | No |
 | POST | `/api/auth/login` | Login and receive tokens | No |
 | POST | `/api/auth/refresh` | Refresh access token | No |
-| GET | `/api/projects` | List user's projects | Yes |
+| GET | `/api/dashboard` | Get dashboard metrics | Yes |
+| GET | `/api/projects` | List user's projects (paginated) | Yes |
 | POST | `/api/projects` | Create a project | Yes |
 | GET | `/api/projects/:id` | Get project details | Yes |
 | PUT | `/api/projects/:id` | Update a project | Owner |
 | DELETE | `/api/projects/:id` | Delete a project | Owner |
+| GET | `/api/projects/:id/stats` | Get project statistics | Member |
 | POST | `/api/projects/:id/members` | Add a member | Owner |
 | DELETE | `/api/projects/:id/members/:userId` | Remove a member | Owner |
-| GET | `/api/projects/:id/tasks` | List tasks (with filters) | Member |
-| POST | `/api/projects/:id/tasks` | Create a task | Member |
+| GET | `/api/tasks` | List tasks (filtered, paginated) | Yes |
+| GET | `/api/tasks/me` | List user's assigned tasks | Yes |
+| POST | `/api/tasks` | Create a task | Member |
 | PUT | `/api/tasks/:id` | Update a task | Member |
 | PATCH | `/api/tasks/:id/status` | Change task status | Member |
 | DELETE | `/api/tasks/:id` | Delete a task | Member |
-| GET | `/api/dashboard` | Get dashboard metrics | Yes |
 
 ---
 
@@ -232,11 +235,29 @@ This builds optimized images: Angular compiled and served via Nginx, Spring Boot
 |-----------|-------------|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Board](docs/screenshots/board.png) |
 
-| Task Detail | Mobile View |
-|-------------|-------------|
-| ![Task](docs/screenshots/task-detail.png) | ![Mobile](docs/screenshots/mobile.png) |
+| Projects | Tasks |
+|----------|-------|
+| ![Projects](docs/screenshots/projects.png) | ![Tasks](docs/screenshots/tasks.png) |
 
-*(Add screenshots to `docs/screenshots/` once the UI is built)*
+| Login | Mobile View |
+|-------|-------------|
+| ![Login](docs/screenshots/login.png) | ![Mobile](docs/screenshots/mobile.png) |
+
+---
+
+## Testing & CI
+
+**Backend** — 118 tests (JUnit 5 + Mockito + Spring Boot Test)
+```bash
+docker compose exec backend ./mvnw test
+```
+
+**Frontend** — 95 tests (Vitest via Angular CLI)
+```bash
+docker compose exec frontend npx ng test --watch=false
+```
+
+**CI/CD** — GitHub Actions runs both test suites on every push to `main` and on pull requests. Netlify and Render auto-deploy on merge to `main`.
 
 ---
 
