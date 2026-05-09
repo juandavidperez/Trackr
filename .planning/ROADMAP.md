@@ -29,7 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `PATCH /api/tasks/{id}/position` with `{ position: int, status: string }` returns 200 and persists the new order
   3. When a task is moved to a different column via existing cross-column drag, its position is set to the end of the target column
   4. All 118 backend tests pass; `position` field is included in TaskResponse DTO
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Foundation: entity, DTO, repository queries, Wave 0 failing test stubs
+- [ ] 01-02-PLAN.md — Service logic: create/updateStatus/updatePosition position assignment and compaction
+- [ ] 01-03-PLAN.md — Controller endpoint, DataSeeder positions, full suite green
 
 ### Phase 2: Drag-Sort Frontend
 **Goal**: Users can drag tasks within a Kanban column and the new order survives page refresh
@@ -86,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Drag-Sort Backend | 0/TBD | Not started | - |
+| 1. Drag-Sort Backend | 0/3 | Not started | - |
 | 2. Drag-Sort Frontend | 0/TBD | Not started | - |
 | 3. Calendar View | 0/TBD | Not started | - |
 | 4. WebSocket Infrastructure | 0/TBD | Not started | - |
