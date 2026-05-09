@@ -12,7 +12,7 @@ Milestone 2 adds three UX features to the working v1: drag-to-reorder tasks with
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Drag-Sort Backend** - Add `position` field to Task, expose PATCH endpoint, update cross-column behavior
+- [x] **Phase 1: Drag-Sort Backend** - Add `position` field to Task, expose PATCH endpoint, update cross-column behavior
 - [ ] **Phase 2: Drag-Sort Frontend** - Remove `cdkDropListSortingDisabled`, wire intra-column reorder to PATCH endpoint
 - [ ] **Phase 3: Calendar View** - Build `/calendar` route with month navigation showing tasks by dueDate
 - [ ] **Phase 4: WebSocket Infrastructure** - Spring WebSocket + STOMP endpoint with JWT auth on backend
@@ -32,9 +32,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Foundation: entity, DTO, repository queries, Wave 0 failing test stubs
-- [ ] 01-02-PLAN.md — Service logic: create/updateStatus/updatePosition position assignment and compaction
-- [ ] 01-03-PLAN.md — Controller endpoint, DataSeeder positions, full suite green
+- [x] 01-01-PLAN.md — Foundation: entity, DTO, repository queries, Wave 0 failing test stubs
+- [x] 01-02-PLAN.md — Service logic: create/updateStatus/updatePosition position assignment and compaction
+- [x] 01-03-PLAN.md — Controller endpoint, DataSeeder positions, full suite green
 
 ### Phase 2: Drag-Sort Frontend
 **Goal**: Users can drag tasks within a Kanban column and the new order survives page refresh
@@ -45,8 +45,10 @@ Plans:
   2. After a page refresh, tasks in each column appear in the order last set by drag
   3. Dragging between columns still works and the moved task appears at the bottom of the target column
   4. All 95 frontend tests pass
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+
+Plans:
+- [ ] 02-01-PLAN.md — Implement position-aware drop handler, gap-based calculation, optimistic updates with error recovery
 
 ### Phase 3: Calendar View
 **Goal**: Users can see all their tasks with due dates on a navigable monthly calendar
@@ -91,8 +93,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Drag-Sort Backend | 0/3 | Not started | - |
-| 2. Drag-Sort Frontend | 0/TBD | Not started | - |
+| 1. Drag-Sort Backend | 3/3 | COMPLETE | 2026-05-09 |
+| 2. Drag-Sort Frontend | 0/1 | Not started | - |
 | 3. Calendar View | 0/TBD | Not started | - |
 | 4. WebSocket Infrastructure | 0/TBD | Not started | - |
 | 5. Real-Time Notifications Frontend | 0/TBD | Not started | - |
