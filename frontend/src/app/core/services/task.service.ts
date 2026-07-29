@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { TaskRequest, TaskResponse, TaskStatusRequest, TaskFilterParams, MyTaskFilterParams, Page } from '../models/task.model';
+import { TaskRequest, TaskResponse, TaskStatusRequest, TaskPositionRequest, TaskFilterParams, MyTaskFilterParams, Page } from '../models/task.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
@@ -51,6 +51,10 @@ export class TaskService {
 
   updateStatus(taskId: number, request: TaskStatusRequest): Observable<TaskResponse> {
     return this.http.patch<TaskResponse>(`${this.apiUrl}/tasks/${taskId}/status`, request);
+  }
+
+  updatePosition(taskId: number, request: TaskPositionRequest): Observable<TaskResponse> {
+    return this.http.patch<TaskResponse>(`${this.apiUrl}/tasks/${taskId}/position`, request);
   }
 
   delete(taskId: number): Observable<void> {

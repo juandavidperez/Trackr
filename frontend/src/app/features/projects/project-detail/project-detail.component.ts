@@ -3,14 +3,14 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { Subject, debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ProjectMember, ProjectResponse } from '../../../core/models/project.model';
-import { TaskFilterParams, TaskPriority, TaskRequest, TaskResponse, TaskStatus } from '../../../core/models/task.model';
+import { TaskFilterParams, TaskPriority, TaskRequest, TaskResponse, TaskStatus, TaskPositionRequest } from '../../../core/models/task.model';
 import { TaskFormModalComponent } from '../../../shared/components/task-form-modal/task-form-modal.component';
 
 @Component({
@@ -477,12 +477,11 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
               cdkDropList
               [cdkDropListData]="todoStatus"
               [cdkDropListConnectedTo]="[inProgressList, doneList]"
-              cdkDropListSortingDisabled
               (cdkDropListDropped)="onTaskDrop($event)"
               #todoList="cdkDropList"
             >
               @for (task of todoTasks(); track task.id; let i = $index) {
-                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [class.opacity-50]="currentlyUpdatingTaskIds().has(task.id)" [class.pointer-events-none]="currentlyUpdatingTaskIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
                   <div class="flex items-start justify-between gap-2">
                     <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
                     <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
@@ -520,12 +519,11 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
               cdkDropList
               [cdkDropListData]="inProgressStatus"
               [cdkDropListConnectedTo]="[todoList, doneList]"
-              cdkDropListSortingDisabled
               (cdkDropListDropped)="onTaskDrop($event)"
               #inProgressList="cdkDropList"
             >
               @for (task of inProgressTasks(); track task.id; let i = $index) {
-                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [class.opacity-50]="currentlyUpdatingTaskIds().has(task.id)" [class.pointer-events-none]="currentlyUpdatingTaskIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
                   <div class="flex items-start justify-between gap-2">
                     <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
                     <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
@@ -563,12 +561,11 @@ import { TaskFormModalComponent } from '../../../shared/components/task-form-mod
               cdkDropList
               [cdkDropListData]="doneStatus"
               [cdkDropListConnectedTo]="[todoList, inProgressList]"
-              cdkDropListSortingDisabled
               (cdkDropListDropped)="onTaskDrop($event)"
               #doneList="cdkDropList"
             >
               @for (task of doneTasks(); track task.id; let i = $index) {
-                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
+                <div cdkDrag [cdkDragData]="task" class="group/card cursor-grab rounded-lg border border-zinc-800/40 bg-zinc-950/60 p-4 hover:border-zinc-700/60 active:cursor-grabbing" [class.animate-fade-in-up]="!recentlyDroppedIds().has(task.id)" [class.dropped-task]="recentlyDroppedIds().has(task.id)" [class.opacity-50]="currentlyUpdatingTaskIds().has(task.id)" [class.pointer-events-none]="currentlyUpdatingTaskIds().has(task.id)" [style.animation-delay]="!recentlyDroppedIds().has(task.id) ? i * 50 + 'ms' : ''">
                   <div class="flex items-start justify-between gap-2">
                     <p class="min-w-0 break-words text-sm font-medium text-zinc-200">{{ task.title }}</p>
                     <button (click)="openEditTask(task)" class="shrink-0 rounded p-1 text-zinc-700 opacity-0 transition-all hover:bg-zinc-800 hover:text-zinc-400 group-hover/card:opacity-100" title="Edit task">
@@ -624,6 +621,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   readonly tasks = signal<TaskResponse[]>([]);
   readonly members = signal<ProjectMember[]>([]);
   readonly recentlyDroppedIds = signal<Set<number>>(new Set());
+  readonly currentlyUpdatingTaskIds = signal<Set<number>>(new Set());
   readonly showTaskModal = signal(false);
   readonly taskModalMode = signal<'create' | 'edit'>('create');
   readonly editingTask = signal<TaskResponse | null>(null);
@@ -811,19 +809,46 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   onTaskDrop(event: CdkDragDrop<TaskStatus>): void {
     const task: TaskResponse = event.item.data;
     const newStatus = event.container.data;
-    if (task.status === newStatus) return;
+    const previousIndex = event.previousIndex;
+    const currentIndex = event.currentIndex;
 
-    // Mark as recently dropped to skip fade-in animation on re-render
-    this.recentlyDroppedIds.update((ids) => {
-      const next = new Set(ids);
-      next.add(task.id);
-      return next;
+    // 1. Store backup for revert on error
+    const originalTasks = [...this.tasks()];
+
+    // 2. Detect move type and calculate new position
+    let newPosition: number | null = null;
+    const isSameColumn = event.previousContainer === event.container;
+
+    if (isSameColumn) {
+      if (previousIndex === currentIndex) return;
+
+      // Calculate new position using gap-based logic
+      const columnTasks = this.tasks()
+        .filter((t) => t.status === newStatus)
+        .sort((a, b) => a.position - b.position);
+
+      moveItemInArray(columnTasks, previousIndex, currentIndex);
+
+      const tasksBefore = columnTasks.slice(0, currentIndex);
+      const tasksAfter = columnTasks.slice(currentIndex + 1);
+
+      const posBefore = tasksBefore.length > 0 ? tasksBefore[tasksBefore.length - 1].position : -500;
+      const posAfter = tasksAfter.length > 0 ? tasksAfter[0].position : posBefore + 1500;
+
+      newPosition = Math.floor((posBefore + posAfter) / 2);
+    }
+
+    // 3. Mark as recently dropped to skip fade-in animation on re-render
+    this.recentlyDroppedIds.update((ids) => new Set(ids).add(task.id));
+    this.currentlyUpdatingTaskIds.update((ids) => new Set(ids).add(task.id));
+
+    // 4. Immediate optimistic update
+    this.tasks.update((tasks) => {
+      const updated = tasks.map((t) =>
+        t.id === task.id ? { ...t, status: newStatus, position: newPosition ?? t.position } : t,
+      );
+      return [...updated].sort((a, b) => a.position - b.position);
     });
-
-    // Immediate optimistic update
-    this.tasks.update((tasks) =>
-      tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
-    );
 
     // Clear dropped marker after render settles
     setTimeout(() => {
@@ -834,13 +859,36 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       });
     }, 50);
 
-    this.taskService.updateStatus(task.id, { status: newStatus }).subscribe({
+    // 5. API Call
+    const obs = isSameColumn
+      ? this.taskService.updatePosition(task.id, { position: newPosition!, status: newStatus })
+      : this.taskService.updateStatus(task.id, { status: newStatus });
+
+    obs.subscribe({
       next: (updatedTask) => {
-        this.tasks.update((tasks) => tasks.map((t) => (t.id === task.id ? updatedTask : t)));
+        this.tasks.update((tasks) =>
+          tasks
+            .map((t) => (t.id === task.id ? updatedTask : t))
+            .sort((a, b) => a.position - b.position),
+        );
+        this.currentlyUpdatingTaskIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(task.id);
+          return next;
+        });
       },
-      error: () => {
-        this.toast.error('Failed to update task status');
-        this.loadTasks();
+      error: (err) => {
+        this.toast.error('Failed to reorder task');
+        this.tasks.set(originalTasks);
+        this.currentlyUpdatingTaskIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(task.id);
+          return next;
+        });
+
+        if (err.status === 404 || err.status === 403) {
+          this.loadTasks();
+        }
       },
     });
   }

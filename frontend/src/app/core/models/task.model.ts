@@ -26,6 +26,11 @@ export interface TaskStatusRequest {
   status: TaskStatus;
 }
 
+export interface TaskPositionRequest {
+  position: number;
+  status: TaskStatus;
+}
+
 export interface TaskResponse {
   id: number;
   title: string;
@@ -38,6 +43,7 @@ export interface TaskResponse {
   projectName: string;
   createdAt: string;
   updatedAt: string;
+  position: number;
 }
 
 export interface TaskFilterParams {
