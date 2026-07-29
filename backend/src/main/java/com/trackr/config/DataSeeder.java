@@ -54,57 +54,59 @@ public class DataSeeder implements CommandLineRunner {
                 admin, admin, alice, bob, carol);
 
         createTask(website, "Design homepage mockup", "Create wireframes and high-fidelity mockups for the new homepage",
-                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(5));
+                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(5), 0);
         createTask(website, "Design about page", "Create mockups for the about/team page",
-                TaskStatus.DONE, TaskPriority.MEDIUM, bob, LocalDate.now().minusDays(2));
-        createTask(website, "Implement responsive navbar", "Build a mobile-first responsive navigation bar with Tailwind CSS",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(2));
-        createTask(website, "Build hero section", "Implement animated hero section with CTA buttons",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, carol, LocalDate.now().plusDays(3));
-        createTask(website, "Set up CI/CD pipeline", "Configure GitHub Actions for automated builds and deployments",
-                TaskStatus.TODO, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(7));
-        createTask(website, "Write landing page copy", "Draft marketing copy for the hero section and features",
-                TaskStatus.TODO, TaskPriority.LOW, null, LocalDate.now().plusDays(14));
-        createTask(website, "Implement dark mode toggle", "Add theme switcher with system preference detection",
-                TaskStatus.TODO, TaskPriority.LOW, alice, LocalDate.now().plusDays(10));
-        createTask(website, "Optimize images and assets", "Compress images, add lazy loading, serve WebP format",
-                TaskStatus.TODO, TaskPriority.MEDIUM, carol, LocalDate.now().plusDays(8));
+                TaskStatus.DONE, TaskPriority.MEDIUM, bob, LocalDate.now().minusDays(2), 1000);
         createTask(website, "SEO audit and meta tags", "Add proper meta tags, Open Graph, structured data",
-                TaskStatus.DONE, TaskPriority.MEDIUM, admin, LocalDate.now().minusDays(1));
+                TaskStatus.DONE, TaskPriority.MEDIUM, admin, LocalDate.now().minusDays(1), 2000);
+        
+        createTask(website, "Implement responsive navbar", "Build a mobile-first responsive navigation bar with Tailwind CSS",
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(2), 0);
+        createTask(website, "Build hero section", "Implement animated hero section with CTA buttons",
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, carol, LocalDate.now().plusDays(3), 1000);
         createTask(website, "Footer and sitemap", "Design and implement footer with links and auto-generated sitemap",
-                TaskStatus.IN_PROGRESS, TaskPriority.LOW, bob, LocalDate.now().plusDays(5));
-        // Overdue tasks
+                TaskStatus.IN_PROGRESS, TaskPriority.LOW, bob, LocalDate.now().plusDays(5), 2000);
+        
+        createTask(website, "Set up CI/CD pipeline", "Configure GitHub Actions for automated builds and deployments",
+                TaskStatus.TODO, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(7), 0);
+        createTask(website, "Write landing page copy", "Draft marketing copy for the hero section and features",
+                TaskStatus.TODO, TaskPriority.LOW, null, LocalDate.now().plusDays(14), 1000);
+        createTask(website, "Implement dark mode toggle", "Add theme switcher with system preference detection",
+                TaskStatus.TODO, TaskPriority.LOW, alice, LocalDate.now().plusDays(10), 2000);
+        createTask(website, "Optimize images and assets", "Compress images, add lazy loading, serve WebP format",
+                TaskStatus.TODO, TaskPriority.MEDIUM, carol, LocalDate.now().plusDays(8), 3000);
         createTask(website, "Fix contact form validation", "Form allows empty submissions, needs client + server validation",
-                TaskStatus.TODO, TaskPriority.HIGH, alice, LocalDate.now().minusDays(2));
+                TaskStatus.TODO, TaskPriority.HIGH, alice, LocalDate.now().minusDays(2), 4000);
         createTask(website, "Update privacy policy page", "Legal team provided new text, needs to be formatted and deployed",
-                TaskStatus.TODO, TaskPriority.MEDIUM, null, LocalDate.now().minusDays(4));
+                TaskStatus.TODO, TaskPriority.MEDIUM, null, LocalDate.now().minusDays(4), 5000);
 
         // ── Project 2: Mobile App v2 (owner: alice) ───────────
         Project mobile = createProject("Mobile App v2",
                 "Build version 2 of the mobile application with new features including offline mode, push notifications, and redesigned UI.",
                 alice, alice, bob, david, emma);
 
-        createTask(mobile, "User authentication flow", "Implement login, register, and password reset screens with biometric support",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(5));
-        createTask(mobile, "Push notification service", "Integrate Firebase Cloud Messaging for push notifications",
-                TaskStatus.TODO, TaskPriority.MEDIUM, bob, LocalDate.now().plusDays(10));
-        createTask(mobile, "Offline mode support", "Add local caching with SQLite and background sync",
-                TaskStatus.TODO, TaskPriority.LOW, david, LocalDate.now().plusDays(21));
         createTask(mobile, "Redesign settings screen", "New settings UI with grouped sections and search",
-                TaskStatus.DONE, TaskPriority.MEDIUM, emma, LocalDate.now().minusDays(3));
+                TaskStatus.DONE, TaskPriority.MEDIUM, emma, LocalDate.now().minusDays(3), 0);
         createTask(mobile, "Implement pull-to-refresh", "Add pull-to-refresh gesture on all list views",
-                TaskStatus.DONE, TaskPriority.LOW, david, LocalDate.now().minusDays(6));
+                TaskStatus.DONE, TaskPriority.LOW, david, LocalDate.now().minusDays(6), 1000);
+        
+        createTask(mobile, "User authentication flow", "Implement login, register, and password reset screens with biometric support",
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(5), 0);
         createTask(mobile, "App performance profiling", "Profile startup time, memory usage, and optimize bottlenecks",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, david, LocalDate.now().plusDays(4));
-        createTask(mobile, "Migrate to Material 3", "Update UI components to Material Design 3 guidelines",
-                TaskStatus.TODO, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(12));
-        createTask(mobile, "Add dark theme", "Implement dark/light theme with system detection",
-                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(15));
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, david, LocalDate.now().plusDays(4), 1000);
         createTask(mobile, "Write unit tests for auth", "Cover login, register, token refresh, and logout flows",
-                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, alice, LocalDate.now().plusDays(6));
-        // Overdue
+                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, alice, LocalDate.now().plusDays(6), 2000);
+        
+        createTask(mobile, "Push notification service", "Integrate Firebase Cloud Messaging for push notifications",
+                TaskStatus.TODO, TaskPriority.MEDIUM, bob, LocalDate.now().plusDays(10), 0);
+        createTask(mobile, "Offline mode support", "Add local caching with SQLite and background sync",
+                TaskStatus.TODO, TaskPriority.LOW, david, LocalDate.now().plusDays(21), 1000);
+        createTask(mobile, "Migrate to Material 3", "Update UI components to Material Design 3 guidelines",
+                TaskStatus.TODO, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(12), 2000);
+        createTask(mobile, "Add dark theme", "Implement dark/light theme with system detection",
+                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(15), 3000);
         createTask(mobile, "Fix crash on Android 12", "App crashes on launch for some Android 12 devices due to splash screen API",
-                TaskStatus.TODO, TaskPriority.HIGH, david, LocalDate.now().minusDays(3));
+                TaskStatus.TODO, TaskPriority.HIGH, david, LocalDate.now().minusDays(3), 4000);
 
         // ── Project 3: API Platform (owner: admin) ────────────
         Project api = createProject("API Platform",
@@ -112,42 +114,45 @@ public class DataSeeder implements CommandLineRunner {
                 admin, admin, alice, david);
 
         createTask(api, "Design API schema", "Define OpenAPI 3.0 spec for all endpoints",
-                TaskStatus.DONE, TaskPriority.HIGH, admin, LocalDate.now().minusDays(10));
+                TaskStatus.DONE, TaskPriority.HIGH, admin, LocalDate.now().minusDays(10), 0);
         createTask(api, "Implement rate limiting", "Add token bucket rate limiter with Redis backend",
-                TaskStatus.DONE, TaskPriority.HIGH, david, LocalDate.now().minusDays(4));
-        createTask(api, "API key management", "CRUD for API keys with scopes and expiration",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(3));
-        createTask(api, "Usage analytics dashboard", "Track API calls per key, endpoint, and time period",
-                TaskStatus.TODO, TaskPriority.MEDIUM, david, LocalDate.now().plusDays(14));
-        createTask(api, "Generate SDK (TypeScript)", "Auto-generate TypeScript client from OpenAPI spec",
-                TaskStatus.TODO, TaskPriority.LOW, alice, LocalDate.now().plusDays(20));
-        createTask(api, "Webhook delivery system", "Implement reliable webhook delivery with retries and logging",
-                TaskStatus.TODO, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(18));
-        createTask(api, "Write API documentation", "Create developer guides with examples for each endpoint",
-                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(7));
+                TaskStatus.DONE, TaskPriority.HIGH, david, LocalDate.now().minusDays(4), 1000);
         createTask(api, "Set up staging environment", "Deploy staging instance with separate database",
-                TaskStatus.DONE, TaskPriority.MEDIUM, david, LocalDate.now().minusDays(7));
+                TaskStatus.DONE, TaskPriority.MEDIUM, david, LocalDate.now().minusDays(7), 2000);
+        
+        createTask(api, "API key management", "CRUD for API keys with scopes and expiration",
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(3), 0);
+        createTask(api, "Write API documentation", "Create developer guides with examples for each endpoint",
+                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(7), 1000);
+        
+        createTask(api, "Usage analytics dashboard", "Track API calls per key, endpoint, and time period",
+                TaskStatus.TODO, TaskPriority.MEDIUM, david, LocalDate.now().plusDays(14), 0);
+        createTask(api, "Generate SDK (TypeScript)", "Auto-generate TypeScript client from OpenAPI spec",
+                TaskStatus.TODO, TaskPriority.LOW, alice, LocalDate.now().plusDays(20), 1000);
+        createTask(api, "Webhook delivery system", "Implement reliable webhook delivery with retries and logging",
+                TaskStatus.TODO, TaskPriority.MEDIUM, admin, LocalDate.now().plusDays(18), 2000);
 
         // ── Project 4: Internal Tools (owner: carol) ──────────
         Project tools = createProject("Internal Tools",
                 "Suite of internal tools for the team: admin panel, deployment scripts, monitoring dashboards.",
                 carol, carol, emma, bob);
 
-        createTask(tools, "Admin panel - user management", "CRUD interface for managing users, roles, and permissions",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, carol, LocalDate.now().plusDays(5));
         createTask(tools, "Deployment automation scripts", "Shell scripts for one-click deploy to staging and production",
-                TaskStatus.DONE, TaskPriority.HIGH, carol, LocalDate.now().minusDays(8));
-        createTask(tools, "Monitoring dashboard", "Grafana dashboards for server metrics, error rates, and uptime",
-                TaskStatus.TODO, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(10));
-        createTask(tools, "Slack bot for alerts", "Bot that sends alerts on deployment failures and high error rates",
-                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(16));
+                TaskStatus.DONE, TaskPriority.HIGH, carol, LocalDate.now().minusDays(8), 0);
         createTask(tools, "Database backup automation", "Scheduled backups with S3 upload and retention policy",
-                TaskStatus.DONE, TaskPriority.HIGH, emma, LocalDate.now().minusDays(12));
+                TaskStatus.DONE, TaskPriority.HIGH, emma, LocalDate.now().minusDays(12), 1000);
+        
+        createTask(tools, "Admin panel - user management", "CRUD interface for managing users, roles, and permissions",
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, carol, LocalDate.now().plusDays(5), 0);
         createTask(tools, "Log aggregation setup", "Set up ELK stack for centralized logging",
-                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(8));
-        // Overdue
+                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(8), 1000);
+        
+        createTask(tools, "Monitoring dashboard", "Grafana dashboards for server metrics, error rates, and uptime",
+                TaskStatus.TODO, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(10), 0);
+        createTask(tools, "Slack bot for alerts", "Bot that sends alerts on deployment failures and high error rates",
+                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(16), 1000);
         createTask(tools, "Fix broken deploy script", "Production deploy script fails on new server config",
-                TaskStatus.TODO, TaskPriority.HIGH, carol, LocalDate.now().minusDays(1));
+                TaskStatus.TODO, TaskPriority.HIGH, carol, LocalDate.now().minusDays(1), 2000);
 
         // ── Project 5: Design System (owner: bob) ─────────────
         Project design = createProject("Design System",
@@ -155,25 +160,27 @@ public class DataSeeder implements CommandLineRunner {
                 bob, bob, alice, emma, carol);
 
         createTask(design, "Define color tokens", "Create semantic color palette with light/dark variants",
-                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(15));
+                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(15), 0);
         createTask(design, "Typography scale", "Define type scale, font families, and line heights",
-                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(12));
+                TaskStatus.DONE, TaskPriority.HIGH, bob, LocalDate.now().minusDays(12), 1000);
         createTask(design, "Button component", "Build button variants: primary, secondary, ghost, destructive, sizes",
-                TaskStatus.DONE, TaskPriority.HIGH, alice, LocalDate.now().minusDays(8));
+                TaskStatus.DONE, TaskPriority.HIGH, alice, LocalDate.now().minusDays(8), 2000);
+        
         createTask(design, "Input components", "Text input, textarea, select, checkbox, radio, switch",
-                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(4));
+                TaskStatus.IN_PROGRESS, TaskPriority.HIGH, alice, LocalDate.now().plusDays(4), 0);
         createTask(design, "Modal component", "Reusable modal with configurable header, body, footer",
-                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(6));
+                TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, emma, LocalDate.now().plusDays(6), 1000);
+        
         createTask(design, "Toast/notification component", "Stackable toast notifications with auto-dismiss",
-                TaskStatus.TODO, TaskPriority.MEDIUM, carol, LocalDate.now().plusDays(9));
+                TaskStatus.TODO, TaskPriority.MEDIUM, carol, LocalDate.now().plusDays(9), 0);
         createTask(design, "Data table component", "Sortable, filterable table with pagination and row selection",
-                TaskStatus.TODO, TaskPriority.MEDIUM, alice, LocalDate.now().plusDays(15));
+                TaskStatus.TODO, TaskPriority.MEDIUM, alice, LocalDate.now().plusDays(15), 1000);
         createTask(design, "Icon library", "Curate and export icon set as SVG sprites and React components",
-                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(20));
+                TaskStatus.TODO, TaskPriority.LOW, bob, LocalDate.now().plusDays(20), 2000);
         createTask(design, "Storybook setup", "Configure Storybook with all components documented",
-                TaskStatus.TODO, TaskPriority.LOW, emma, LocalDate.now().plusDays(25));
+                TaskStatus.TODO, TaskPriority.LOW, emma, LocalDate.now().plusDays(25), 3000);
         createTask(design, "Accessibility audit", "WCAG 2.1 AA compliance check on all components",
-                TaskStatus.TODO, TaskPriority.HIGH, carol, LocalDate.now().plusDays(12));
+                TaskStatus.TODO, TaskPriority.HIGH, carol, LocalDate.now().plusDays(12), 4000);
 
         log.info("Seed data created: 6 users, 5 projects, 47 tasks");
     }
@@ -199,7 +206,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void createTask(Project project, String title, String description,
-                            TaskStatus status, TaskPriority priority, User assignee, LocalDate dueDate) {
+                            TaskStatus status, TaskPriority priority, User assignee, LocalDate dueDate, int position) {
         Task task = new Task();
         task.setTitle(title);
         task.setDescription(description);
@@ -208,6 +215,7 @@ public class DataSeeder implements CommandLineRunner {
         task.setAssignee(assignee);
         task.setDueDate(dueDate);
         task.setProject(project);
+        task.setPosition(position);
         taskRepository.save(task);
     }
 }

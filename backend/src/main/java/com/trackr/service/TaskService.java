@@ -1,5 +1,6 @@
 package com.trackr.service;
 
+import com.trackr.dto.TaskPositionRequest;
 import com.trackr.dto.TaskRequest;
 import com.trackr.dto.TaskResponse;
 import com.trackr.dto.TaskStatusRequest;
@@ -10,12 +11,15 @@ import com.trackr.model.Task;
 import com.trackr.model.User;
 import com.trackr.model.enums.TaskPriority;
 import com.trackr.model.enums.TaskStatus;
+import java.util.List;
 import com.trackr.repository.ProjectRepository;
 import com.trackr.repository.TaskRepository;
 import com.trackr.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +49,11 @@ public class TaskService {
                     .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
             task.setAssignee(assignee);
         }
+        
+        Integer maxPos = taskRepository
+                .findMaxPositionInColumn(project.getId(), task.getStatus())
+                .orElse(-1000);
+        task.setPosition(maxPos + 1000);
 
         task = taskRepository.save(task);
         return toResponse(task);
@@ -55,7 +64,10 @@ public class TaskService {
         Project project = findProjectOrThrow(projectId);
         requireMember(project, user);
 
-        return taskRepository.findByFilters(projectId, status, priority, assigneeId, search, pageable)
+        Pageable sortedByPosition = PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(), Sort.by("position").ascending());
+
+        return taskRepository.findByFilters(projectId, status, priority, assigneeId, search, sortedByPosition)
                 .map(this::toResponse);
     }
 
@@ -91,8 +103,47 @@ public class TaskService {
         Task task = findTaskOrThrow(taskId);
         requireMember(task.getProject(), user);
         task.setStatus(request.getStatus());
+        
+        Integer maxPos = taskRepository
+                .findMaxPositionInColumn(task.getProject().getId(), request.getStatus())
+                .orElse(-1000);
+        task.setPosition(maxPos + 1000);
+
         task = taskRepository.save(task);
         return toResponse(task);
+    }
+
+    @Transactional
+    public TaskResponse updatePosition(Long taskId, TaskPositionRequest request, User user) {
+        Task task = findTaskOrThrow(taskId);
+        requireMember(task.getProject(), user);
+        task.setStatus(request.getStatus());
+        task.setPosition(request.getPosition());
+        task = taskRepository.save(task);
+        compactIfNeeded(task.getProject().getId(), request.getStatus());
+        task = taskRepository.findById(taskId).orElse(task);
+        return toResponse(task);
+    }
+
+    private void compactIfNeeded(Long projectId, TaskStatus status) {
+        List<Task> tasks = taskRepository.findByProjectAndStatusOrderByPosition(projectId, status);
+        for (int i = 1; i < tasks.size(); i++) {
+            Integer cur = tasks.get(i).getPosition();
+            Integer prev = tasks.get(i - 1).getPosition();
+            if (cur == null || prev == null || cur - prev < 1) {
+                compactColumn(projectId, status, tasks);
+                return;
+            }
+        }
+    }
+
+    private void compactColumn(Long projectId, TaskStatus status, List<Task> tasks) {
+        int pos = 0;
+        for (Task t : tasks) {
+            t.setPosition(pos);
+            pos += 1000;
+        }
+        taskRepository.saveAll(tasks);
     }
 
     @Transactional
@@ -138,7 +189,8 @@ public class TaskService {
                 task.getProject().getId(),
                 task.getProject().getName(),
                 task.getCreatedAt(),
-                task.getUpdatedAt()
+                task.getUpdatedAt(),
+                task.getPosition()
         );
     }
 }
