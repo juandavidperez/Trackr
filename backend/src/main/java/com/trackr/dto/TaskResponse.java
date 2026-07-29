@@ -23,4 +23,5 @@ public class TaskResponse {
     private String projectName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer position;
 }

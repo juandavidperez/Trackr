@@ -1,8 +1,10 @@
 package com.trackr.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trackr.dto.TaskPositionRequest;
 import com.trackr.dto.TaskRequest;
 import com.trackr.dto.TaskResponse;
+import com.trackr.dto.TaskStatusRequest;
 import com.trackr.model.enums.TaskPriority;
 import com.trackr.model.enums.TaskStatus;
 import com.trackr.repository.UserRepository;
@@ -23,10 +25,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TaskController.class)
@@ -54,7 +54,7 @@ class TaskControllerTest {
     private TaskResponse sampleResponse() {
         return new TaskResponse(1L, "Test Task", "Description", TaskStatus.TODO,
                 TaskPriority.HIGH, LocalDate.now().plusDays(5), "Alice",
-                10L, "Test Project", LocalDateTime.now(), LocalDateTime.now());
+                10L, "Test Project", LocalDateTime.now(), LocalDateTime.now(), 1000);
     }
 
     // --- list endpoint: query params ---
@@ -173,5 +173,47 @@ class TaskControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1));
+    }
+
+    // --- updatePosition endpoint: validation ---
+
+    @Test
+    void updatePosition_validRequest_returns200() throws Exception {
+        TaskPositionRequest request = new TaskPositionRequest();
+        request.setPosition(2500);
+        request.setStatus(TaskStatus.IN_PROGRESS);
+
+        when(taskService.updatePosition(eq(1L), any(TaskPositionRequest.class), any()))
+                .thenReturn(sampleResponse());
+
+        mockMvc.perform(patch("/api/tasks/1/position")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.position").value(1000));
+    }
+
+    @Test
+    void updatePosition_nullPosition_returns400() throws Exception {
+        TaskPositionRequest request = new TaskPositionRequest();
+        request.setPosition(null);
+        request.setStatus(TaskStatus.TODO);
+
+        mockMvc.perform(patch("/api/tasks/1/position")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatePosition_nullStatus_returns400() throws Exception {
+        TaskPositionRequest request = new TaskPositionRequest();
+        request.setPosition(2500);
+        request.setStatus(null);
+
+        mockMvc.perform(patch("/api/tasks/1/position")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

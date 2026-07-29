@@ -1,5 +1,6 @@
 package com.trackr.controller;
 
+import com.trackr.dto.TaskPositionRequest;
 import com.trackr.dto.TaskRequest;
 import com.trackr.dto.TaskResponse;
 import com.trackr.dto.TaskStatusRequest;
@@ -88,6 +89,18 @@ public class TaskController {
             @Valid @RequestBody TaskStatusRequest request,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(taskService.updateStatus(id, request, user));
+    }
+
+    @PatchMapping("/api/tasks/{id}/position")
+    @Operation(summary = "Update task position", description = "Reorders a task within or across Kanban columns")
+    @ApiResponse(responseCode = "200", description = "Position updated")
+    @ApiResponse(responseCode = "400", description = "Validation error — position or status is null")
+    @ApiResponse(responseCode = "404", description = "Task not found or access denied")
+    public ResponseEntity<TaskResponse> updatePosition(
+            @PathVariable Long id,
+            @Valid @RequestBody TaskPositionRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(taskService.updatePosition(id, request, user));
     }
 
     @DeleteMapping("/api/tasks/{id}")

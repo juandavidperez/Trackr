@@ -1,6 +1,9 @@
 package com.trackr.service;
 
+import com.trackr.dto.TaskPositionRequest;
+import com.trackr.dto.TaskRequest;
 import com.trackr.dto.TaskResponse;
+import com.trackr.dto.TaskStatusRequest;
 import com.trackr.exception.AccessDeniedException;
 import com.trackr.exception.ResourceNotFoundException;
 import com.trackr.model.Project;
@@ -14,6 +17,7 @@ import com.trackr.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -86,6 +90,7 @@ class TaskServiceTest {
         task.setAssignee(assignee);
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
+        task.setPosition(1000);
         return task;
     }
 
@@ -208,5 +213,110 @@ class TaskServiceTest {
         assertThatThrownBy(() -> taskService.listByProject(999L, null, null, null, null, defaultPageable, member))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Project not found");
+    }
+
+    // --- position management logic stubs ---
+
+    @Test
+    void updateStatus_setsPositionToEndOfTargetColumn() {
+        Task task = buildTask(1L, "Test Task", TaskStatus.TODO, TaskPriority.MEDIUM, member);
+        TaskStatusRequest request = new TaskStatusRequest();
+        request.setStatus(TaskStatus.IN_PROGRESS);
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findMaxPositionInColumn(task.getProject().getId(), TaskStatus.IN_PROGRESS))
+                .thenReturn(Optional.of(2000));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        taskService.updateStatus(1L, request, member);
+
+        ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(captor.capture());
+        assertThat(captor.getValue().getPosition()).isEqualTo(3000);
+    }
+
+    @Test
+    void updateStatus_emptyColumn_setsPositionToZero() {
+        Task task = buildTask(1L, "Test Task", TaskStatus.TODO, TaskPriority.MEDIUM, member);
+        TaskStatusRequest request = new TaskStatusRequest();
+        request.setStatus(TaskStatus.IN_PROGRESS);
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findMaxPositionInColumn(task.getProject().getId(), TaskStatus.IN_PROGRESS))
+                .thenReturn(Optional.empty());
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        taskService.updateStatus(1L, request, member);
+
+        ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(captor.capture());
+        assertThat(captor.getValue().getPosition()).isEqualTo(0);
+    }
+
+    @Test
+    void updatePosition_validRequest_updatesPositionAndStatus() {
+        Task task = buildTask(1L, "Test Task", TaskStatus.TODO, TaskPriority.MEDIUM, member);
+        TaskPositionRequest request = new TaskPositionRequest();
+        request.setPosition(2500);
+        request.setStatus(TaskStatus.IN_PROGRESS);
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(taskRepository.findByProjectAndStatusOrderByPosition(task.getProject().getId(), TaskStatus.IN_PROGRESS))
+                .thenReturn(List.of(task));
+
+        TaskResponse response = taskService.updatePosition(1L, request, member);
+
+        assertThat(response.getStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
+        assertThat(response.getPosition()).isEqualTo(2500);
+    }
+
+    @Test
+    void updatePosition_triggersCompaction_whenGapLessThanOne() {
+        Task task = buildTask(1L, "Test Task", TaskStatus.TODO, TaskPriority.MEDIUM, member);
+        Task neighbor = buildTask(2L, "Neighbor", TaskStatus.TODO, TaskPriority.MEDIUM, member);
+        neighbor.setPosition(2500);
+
+        TaskPositionRequest request = new TaskPositionRequest();
+        request.setPosition(2500);
+        request.setStatus(TaskStatus.TODO);
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
+            task.setPosition(2500);
+            return task;
+        });
+        when(taskRepository.findByProjectAndStatusOrderByPosition(task.getProject().getId(), TaskStatus.TODO))
+                .thenReturn(List.of(task, neighbor));
+
+        taskService.updatePosition(1L, request, member);
+
+        verify(taskRepository).saveAll(anyList());
+    }
+
+    @Test
+    void create_setsPositionToMaxPlusGap() {
+        TaskRequest request = new TaskRequest();
+        request.setTitle("New Task");
+        request.setStatus(TaskStatus.TODO);
+        request.setPriority(TaskPriority.MEDIUM);
+
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(taskRepository.findMaxPositionInColumn(project.getId(), TaskStatus.TODO))
+                .thenReturn(Optional.of(1000));
+        when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
+            Task t = inv.getArgument(0);
+            t.setId(99L);
+            t.setCreatedAt(LocalDateTime.now());
+            t.setUpdatedAt(LocalDateTime.now());
+            return t;
+        });
+
+        taskService.create(10L, request, member);
+
+        ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+        verify(taskRepository).save(captor.capture());
+        assertThat(captor.getValue().getPosition()).isEqualTo(2000);
     }
 }

@@ -57,4 +57,7 @@ public class Task {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column
+    private Integer position;
 }

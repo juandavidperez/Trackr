@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
@@ -73,4 +74,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                            @Param("priority") TaskPriority priority,
                            @Param("search") String search,
                            Pageable pageable);
+
+    @Query("SELECT MAX(t.position) FROM Task t WHERE t.project.id = :projectId AND t.status = :status")
+    Optional<Integer> findMaxPositionInColumn(@Param("projectId") Long projectId,
+                                              @Param("status") TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status = :status ORDER BY t.position ASC")
+    List<Task> findByProjectAndStatusOrderByPosition(@Param("projectId") Long projectId,
+                                                     @Param("status") TaskStatus status);
 }
