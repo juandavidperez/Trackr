@@ -48,7 +48,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 02-01-PLAN.md — Implement position-aware drop handler, gap-based calculation, optimistic updates with error recovery
+- [x] 02-01-PLAN.md — Implement position-aware drop handler, gap-based calculation, optimistic updates with error recovery
 
 ### Phase 3: Calendar View
 **Goal**: Users can see all their tasks with due dates on a navigable monthly calendar

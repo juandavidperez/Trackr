@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: planning
+stopped_at: Phase 2 complete — Frontend reorder logic implemented and tested
+last_updated: "2026-05-09T23:58:00.000Z"
+last_activity: 2026-05-09 -- Phase 02 completed
+progress:
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
+  percent: 40
+---
+
 # Project State
 
 ## Project Reference
@@ -5,33 +21,36 @@
 See: .planning/PROJECT.md (updated 2026-05-08)
 
 **Core value:** Tasks can be prioritized visually and in real time — reordering sticks, deadlines are visible on a calendar, and collaborators see changes instantly.
-**Current focus:** Phase 1 — Drag-Sort Backend
+**Current focus:** Phase 03 — Real-time Updates (Backend)
 
 ## Current Position
 
-Phase: 1 of 5 (Drag-Sort Backend)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-05-08 — Roadmap created for Milestone 2
+Phase: 02 (Frontend Reorder Logic) — COMPLETE
+Plan: -
+Status: Ready for Phase 03
+Last activity: 2026-05-09 -- Phase 02 completed
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [▓▓▓▓░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+
+- Total plans completed: 4
+- Average duration: 1 hour
+- Total execution time: 4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 3 | 3h | 1h |
+| 02 | 1 | 1h | 1h |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+
+- Last 5 plans: 4 (Phase 01, 02)
+- Trend: Steady
 
 *Updated after each plan completion*
 
@@ -46,6 +65,10 @@ Recent decisions affecting current work:
 - Cross-project calendar using My Tasks scope (reuses TaskService)
 - Spring WebSocket + STOMP — not raw WS (native Spring support, works with JWT security)
 - Notify only assigned/owned tasks (reduces noise)
+- **Gap-based positioning**: 1000 increment between tasks to allow easy middle-insertion
+- **Automatic Compaction**: Re-index column when gap becomes < 1
+- **Optimistic UI**: Reorder local signals immediately before API call; revert on error.
+- **Disabled State**: Opacity-50 on card during in-flight position updates.
 
 ### Pending Todos
 
@@ -53,7 +76,6 @@ None yet.
 
 ### Blockers/Concerns
 
-- `cdkDropListSortingDisabled` currently active on all Kanban columns — must be removed in Phase 2 only after Phase 1 backend is ready
 - Render (backend host) supports WebSocket — confirmed in PROJECT.md; verify at Phase 4 start
 - Frontend on Netlify is static — WebSocket connects to Render backend directly (no proxy needed)
 
@@ -68,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-09
-Stopped at: Phase 1 context gathered via discuss-phase
-Resume file: .planning/phases/01-drag-sort-backend/01-CONTEXT.md
+Stopped at: Phase 2 complete — Frontend reorder logic implemented and tested
+Resume file: .planning/phases/03-real-time-backend/
