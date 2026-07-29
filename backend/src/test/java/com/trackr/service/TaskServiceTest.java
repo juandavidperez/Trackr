@@ -302,7 +302,6 @@ class TaskServiceTest {
         request.setPriority(TaskPriority.MEDIUM);
 
         when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
-        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
         when(taskRepository.findMaxPositionInColumn(project.getId(), TaskStatus.TODO))
                 .thenReturn(Optional.of(1000));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
