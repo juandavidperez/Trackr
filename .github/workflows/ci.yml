@@ -1,15 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CI — Intégration continue de Trackr
+#
+# Déclencheurs : push sur main/develop, Pull Request vers main/develop,
+#                lancement manuel (onglet Actions → Run workflow).
+# Jobs :        backend (tests + build) · frontend (tests + build)
+#               security (scan Trivy) · ci-status (résultat global)
+# ─────────────────────────────────────────────────────────────────────────────
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Moindre privilège : le jeton GITHUB_TOKEN ne peut que lire le dépôt.
+permissions:
+  contents: read
+
+# Un nouveau push sur la même branche annule l'exécution précédente devenue inutile.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # ── Backend : Java 17, Maven, PostgreSQL 16 ────────────────────────────────
   backend:
-    name: Backend Tests
+    name: Backend — tests & build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -20,47 +44,146 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U trackr"
+          --health-cmd "pg_isready -U trackr -d trackr_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
-    steps:
-      - uses: actions/checkout@v4
+    # Valeurs de test uniquement : aucun secret réel n'est utilisé en CI.
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/trackr_test
+      SPRING_DATASOURCE_USERNAME: trackr
+      SPRING_DATASOURCE_PASSWORD: trackr
+      JWT_SECRET: ci-test-secret-key-that-is-long-enough-for-hmac-sha256
+      CORS_ALLOWED_ORIGINS: http://localhost:4200
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          distribution: corretto
+          persist-credentials: false
+
+      - name: Set up Java 17 (Temurin) with Maven cache
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
           java-version: '17'
           cache: maven
 
-      - name: Run tests
-        working-directory: backend
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/trackr_test
-          SPRING_DATASOURCE_USERNAME: trackr
-          SPRING_DATASOURCE_PASSWORD: trackr
-          JWT_SECRET: ci-test-secret-key-that-is-long-enough-for-hmac-sha256
-          CORS_ALLOWED_ORIGINS: http://localhost:4200
-        run: ./mvnw test -B -q
+      # verify = compile + tests + package du .jar : échoue si un test échoue.
+      - name: Compile, test and package
+        run: ./mvnw -B -ntp verify
 
+      - name: Test summary
+        if: always()
+        run: python3 ../scripts/ci/junit-summary.py "Backend (JUnit 5)" target/surefire-reports/TEST-*.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-test-reports
+          path: backend/target/surefire-reports/
+          retention-days: 14
+
+  # ── Frontend : Node (version de .nvmrc), Angular, Vitest ───────────────────
   frontend:
-    name: Frontend Tests
+    name: Frontend — tests & build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 24
+          persist-credentials: false
+
+      - name: Set up Node.js from .nvmrc with npm cache
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: frontend
         run: npm ci
 
-      - name: Run tests
-        working-directory: frontend
-        run: npx ng test --watch=false
+      - name: Run unit tests
+        run: npx ng test --watch=false --reporters=junit --reporters=default --output-file=test-results/junit.xml
+
+      - name: Production build
+        run: npx ng build --configuration production
+
+      - name: Test summary
+        if: always()
+        run: python3 ../scripts/ci/junit-summary.py "Frontend (Vitest)" test-results/junit.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-test-reports
+          path: frontend/test-results/
+          retention-days: 14
+
+  # ── Sécurité : dépendances vulnérables + secrets commités ──────────────────
+  # Mode « rapport » pour l'instant (n'échoue pas) : les vulnérabilités
+  # existantes seront corrigées en phase M, puis ce job deviendra bloquant.
+  security:
+    name: Security — Trivy scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan dependencies and secrets
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          output: trivy-report.txt
+          exit-code: '0'
+
+      - name: Security summary
+        if: always()
+        run: |
+          {
+            echo "### Security — Trivy (HIGH, CRITICAL, corrigeables)"
+            echo '```'
+            cat trivy-report.txt 2>/dev/null || echo "Aucun rapport généré."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+          retention-days: 14
+
+  # ── Résultat global : un seul « check » à exiger dans la protection de branche
+  ci-status:
+    name: CI status
+    if: always()
+    needs: [backend, frontend, security]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required jobs
+        run: |
+          echo "backend=${{ needs.backend.result }} frontend=${{ needs.frontend.result }} security=${{ needs.security.result }}"
+          if [ "${{ needs.backend.result }}" != "success" ] || [ "${{ needs.frontend.result }}" != "success" ]; then
+            echo "::error::Au moins un job obligatoire a échoué."
+            exit 1
+          fi

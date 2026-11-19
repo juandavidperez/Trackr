@@ -58,7 +58,7 @@ Trackr helps teams organize projects and track tasks through an intuitive Kanban
 | Database | PostgreSQL 16 |
 | Auth | JWT (access + refresh tokens), BCrypt |
 | Docs | SpringDoc OpenAPI 2.3 (Swagger UI) |
-| Testing | Vitest (frontend, 95 tests), JUnit 5 + Mockito (backend, 118 tests) |
+| Testing | Vitest (frontend, 101 tests), JUnit 5 + Mockito (backend, 126 tests) |
 | CI/CD | GitHub Actions |
 | DevOps | Docker, Docker Compose, Nginx |
 | Deploy | Netlify (frontend), Render (backend), Supabase (database) |
@@ -225,10 +225,10 @@ Full API documentation available at [Swagger UI](https://trackr-api-kxgo.onrende
 ## Testing
 
 ```bash
-# Backend (118 tests)
+# Backend (126 tests)
 docker compose exec backend ./mvnw test
 
-# Frontend (95 tests)
+# Frontend (101 tests)
 docker compose exec frontend npx ng test --watch=false
 ```
 

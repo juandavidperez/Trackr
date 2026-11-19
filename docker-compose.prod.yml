@@ -1,11 +1,28 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stack « production » locale : images optimisées, un seul point d'entrée.
+#
+#   navigateur → http://localhost (frontend nginx :8080)
+#                    ├── /      → fichiers Angular
+#                    └── /api/  → proxy vers backend:8080 (réseau Docker interne)
+#   backend → db:5432
+#
+# Seul le frontend est publié sur l'hôte : le backend et la base ne sont
+# joignables que depuis le réseau Docker.
+# Lancement (images construites localement) :
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Lancement (images publiées sur GHCR, sans build) :
+#   BACKEND_IMAGE=ghcr.io/<owner>/trackr-backend:sha-xxxxxxx \
+#   FRONTEND_IMAGE=ghcr.io/<owner>/trackr-frontend:sha-xxxxxxx \
+#   docker compose -f docker-compose.prod.yml up -d --no-build
+# ─────────────────────────────────────────────────────────────────────────────
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: trackr-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB manquant dans .env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER manquant dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -14,23 +31,25 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-trackr-backend:local}
     container_name: trackr-backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans .env}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      # Le frontend appelle /api sur la même origine : CORS n'est plus sollicité,
+      # mais la propriété reste obligatoire pour l'application.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS_PROD:-http://localhost}
       SPRING_PROFILES_ACTIVE: prod
-    ports:
-      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -40,13 +59,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        API_URL: ${API_URL:-http://localhost:8080/api}
+    image: ${FRONTEND_IMAGE:-trackr-frontend:local}
     container_name: trackr-frontend
+    environment:
+      BACKEND_URL: http://backend:8080
     ports:
-      - "80:80"
+      - "80:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
