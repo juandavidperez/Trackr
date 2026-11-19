@@ -78,3 +78,5 @@ docker-compose.override.yml
 # Claude
 # ===================== 
 CLAUDE.md
+# CI test reports
+frontend/test-results/

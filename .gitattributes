@@ -1,0 +1,16 @@
+# Normalise les fins de ligne : LF dans le dépôt, quel que soit l'OS.
+* text=auto eol=lf
+
+# Scripts exécutés dans des conteneurs Linux : toujours LF.
+*.sh      text eol=lf
+mvnw      text eol=lf
+
+# Scripts Windows : CRLF obligatoire pour cmd.exe.
+*.cmd     text eol=crlf
+*.bat     text eol=crlf
+
+# Fichiers binaires : jamais modifiés par Git.
+*.png     binary
+*.jpg     binary
+*.ico     binary
+*.jar     binary
