@@ -1,27 +1,32 @@
-# ── Stage 1: Build ────────────────────────────────────
-FROM maven:3.9-amazoncorretto-17-alpine AS build
-
+# ── Stage 1 : build ─────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
-# Cache dependencies
+# Dépendances d'abord : cette couche reste en cache tant que pom.xml ne change pas.
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn -B -ntp dependency:go-offline
 
-# Build the application (skip tests — they run in CI)
+# Les tests ne sont pas relancés ici : la CI les a déjà exécutés.
 COPY src ./src
-RUN mvn package -DskipTests -B && \
-    mv target/*.jar app.jar
+RUN mvn -B -ntp package -DskipTests \
+    && mv target/*.jar app.jar
 
-# ── Stage 2: Run ─────────────────────────────────────
-FROM amazoncorretto:17-alpine
+# ── Stage 2 : runtime (JRE seulement, pas de JDK ni de Maven) ───────────────
+FROM eclipse-temurin:17-jre-alpine
 
-RUN addgroup -S trackr && adduser -S trackr -G trackr
+# Utilisateur dédié avec un UID numérique fixe : Kubernetes peut alors
+# vérifier runAsNonRoot sans connaître les noms d'utilisateurs de l'image.
+RUN addgroup -S -g 10001 trackr && adduser -S -u 10001 -G trackr trackr
 WORKDIR /app
+COPY --from=build --chown=10001:10001 /app/app.jar app.jar
+USER 10001
 
-COPY --from=build /app/app.jar .
-
-USER trackr
+# La JVM adapte la taille du heap à la limite mémoire du conteneur.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
