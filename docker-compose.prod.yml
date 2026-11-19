@@ -8,7 +8,12 @@
 #
 # Seul le frontend est publié sur l'hôte : le backend et la base ne sont
 # joignables que depuis le réseau Docker.
-# Lancement : docker compose -f docker-compose.prod.yml up -d --build
+# Lancement (images construites localement) :
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Lancement (images publiées sur GHCR, sans build) :
+#   BACKEND_IMAGE=ghcr.io/<owner>/trackr-backend:sha-xxxxxxx \
+#   FRONTEND_IMAGE=ghcr.io/<owner>/trackr-frontend:sha-xxxxxxx \
+#   docker compose -f docker-compose.prod.yml up -d --no-build
 # ─────────────────────────────────────────────────────────────────────────────
 services:
   db:
@@ -32,7 +37,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: trackr-backend:local
+    image: ${BACKEND_IMAGE:-trackr-backend:local}
     container_name: trackr-backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
@@ -54,7 +59,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: trackr-frontend:local
+    image: ${FRONTEND_IMAGE:-trackr-frontend:local}
     container_name: trackr-frontend
     environment:
       BACKEND_URL: http://backend:8080

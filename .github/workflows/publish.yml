@@ -1,0 +1,195 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Publish — construit, teste et publie les images Docker sur GHCR.
+#
+# Quand ?
+#   • Après une exécution RÉUSSIE du workflow « CI » déclenchée par un push
+#     sur main ou develop (jamais pour une Pull Request).
+#   • Sur un tag de version vX.Y.Z (release).
+#   • Manuellement (onglet Actions → Publish → Run workflow).
+#
+# Tags produits pour chaque image :
+#   sha-<7 caractères>  immuable : c'est lui qu'on déploie
+#   <branche>           develop ou main : pointe vers la dernière image publiée
+#   latest              uniquement pour main
+#   X.Y.Z et X.Y        uniquement pour un tag de version vX.Y.Z
+# ─────────────────────────────────────────────────────────────────────────────
+name: Publish
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, develop]
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.service }}
+    # Sécurité : on ne publie que si la CI a réussi ET qu'elle venait d'un push
+    # (un workflow_run déclenché par une PR pourrait exécuter du code non relu).
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write          # nécessaire pour pousser sur ghcr.io
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, frontend]
+
+    # Base de données temporaire pour le test de fumée du backend.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: trackr
+          POSTGRES_USER: trackr
+          POSTGRES_PASSWORD: trackr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trackr -d trackr"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # ── 1. Déterminer le commit, la branche et les tags ───────────────────
+      - name: Compute image name and tags
+        id: meta
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+          SERVICE: ${{ matrix.service }}
+        run: |
+          if [ "$EVENT" = "workflow_run" ]; then
+            SHA="$RUN_SHA"; BRANCH="$RUN_BRANCH"
+          else
+            SHA="$GITHUB_SHA"; BRANCH=""
+            [ "$REF_TYPE" = "branch" ] && BRANCH="$REF_NAME"
+          fi
+          IMAGE="ghcr.io/${OWNER,,}/trackr-${SERVICE}"
+          TAGS="${IMAGE}:sha-${SHA::7}"
+          if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "develop" ]; then
+            TAGS="${TAGS},${IMAGE}:${BRANCH}"
+          fi
+          [ "$BRANCH" = "main" ] && TAGS="${TAGS},${IMAGE}:latest"
+          if [ "$REF_TYPE" = "tag" ]; then
+            VERSION="${REF_NAME#v}"
+            TAGS="${TAGS},${IMAGE}:${VERSION},${IMAGE}:${VERSION%.*}"
+          fi
+          {
+            echo "sha=$SHA"
+            echo "image=$IMAGE"
+            echo "tags=$TAGS"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+          echo "Image : $IMAGE"; echo "Tags  : $TAGS"
+
+      - name: Checkout the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.meta.outputs.sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # ── 2. Construire l'image localement (sans la publier) ────────────────
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./${{ matrix.service }}
+          load: true
+          tags: trackr-${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      # ── 3. Test de fumée : l'image démarre-t-elle vraiment ? ──────────────
+      - name: Smoke test backend
+        if: matrix.service == 'backend'
+        run: |
+          docker run -d --name smoke --network host \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/trackr \
+            -e SPRING_DATASOURCE_USERNAME=trackr \
+            -e SPRING_DATASOURCE_PASSWORD=trackr \
+            -e JWT_SECRET=smoke-test-secret-key-that-is-long-enough-for-hmac \
+            -e CORS_ALLOWED_ORIGINS=http://localhost \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            trackr-backend:ci
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8080/actuator/health | grep -q '"UP"'; then
+              echo "Backend healthy après $((i*3)) s"; curl -s http://localhost:8080/api/health; echo
+              test "$(docker inspect -f '{{.Config.User}}' trackr-backend:ci)" = "10001"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Le backend n'est pas devenu healthy en 90 s"; docker logs smoke; exit 1
+
+      - name: Smoke test frontend
+        if: matrix.service == 'frontend'
+        run: |
+          docker run -d --name smoke -p 8081:8080 -e BACKEND_URL=http://127.0.0.1:1 trackr-frontend:ci
+          for i in $(seq 1 10); do
+            curl -fs http://localhost:8081/healthz >/dev/null && break
+            sleep 1
+          done
+          curl -fs http://localhost:8081/ | grep -q '<title>Trackr</title>' \
+            || { echo "::error::La page servie n'est pas Trackr"; docker logs smoke; exit 1; }
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/projects/1)" = "200"
+          test "$(docker inspect -f '{{.Config.User}}' trackr-frontend:ci)" = "101"
+          echo "Frontend OK : page Trackr, route SPA, utilisateur non-root"
+
+      # ── 4. Publier (uniquement si le test de fumée a réussi) ──────────────
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        id: push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+            org.opencontainers.image.title=trackr-${{ matrix.service }}
+
+      - name: Summary
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo "### 📦 trackr-${{ matrix.service }} publié"
+            echo "Commit : \`${{ steps.meta.outputs.sha }}\`"
+            echo "Digest : \`$DIGEST\`"
+            echo ""
+            echo "$TAGS" | tr ',' '\n' | sed 's/^/- `/; s/$/`/'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -81,3 +81,14 @@ pour pouvoir la justifier plus tard (soutenance, entretien, nouveau membre de l'
   - `HEALTHCHECK` dans les deux images ; `-XX:MaxRAMPercentage=75` pour que la JVM respecte la limite mémoire du conteneur.
   - nginx écrase `X-Forwarded-For` avec l'IP qu'il voit : un client ne peut plus usurper une IP pour contourner le rate limiting.
 - **Conséquences :** images plus petites, compatibles avec `runAsNonRoot` en Kubernetes (phase I) ; ports internes à 8080 pour les deux services.
+
+## ADR-011 — Publication des images sur GHCR
+
+- **Date :** 2026-11-19 · **Statut :** acceptée
+- **Contexte :** les images doivent être construites une fois, testées, puis déployées telles quelles (Minikube, puis EKS).
+- **Décisions :**
+  - Registre : GitHub Container Registry (`ghcr.io/<owner>/trackr-backend|frontend`), authentifié par le `GITHUB_TOKEN` du workflow (`packages: write` limité au job de publication) : aucun secret à créer.
+  - Déclenchement par `workflow_run` après une CI **réussie** sur un **push** vers `main`/`develop` : le code d'une PR n'est jamais publié.
+  - Le tag `sha-<7>` est immuable et c'est lui qu'on déploie ; `develop`, `main` et `latest` sont des tags mobiles de confort ; `X.Y.Z` pour les releases.
+  - Un test de fumée s'exécute sur l'image construite avant tout push : une image qui ne démarre pas n'est jamais publiée.
+- **Limite connue :** un tag `vX.Y.Z` est publié sans attendre la CI. Il doit être posé sur un commit de `main` déjà validé (procédure formalisée en phase G).
