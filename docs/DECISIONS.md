@@ -64,3 +64,20 @@ pour pouvoir la justifier plus tard (soutenance, entretien, nouveau membre de l'
   - Scan Trivy (dépendances + secrets) en mode rapport : les vulnérabilités existantes seront traitées en phase M, puis le job deviendra bloquant.
   - Job `ci-status` unique pour la protection de branche.
 - **Reporté :** analyse de qualité de code (SonarCloud) et couverture de tests, à évaluer en phase M.
+
+## ADR-009 — Le frontend appelle l'API par un chemin relatif `/api`
+
+- **Date :** 2026-11-19 · **Statut :** acceptée
+- **Contexte :** l'URL de l'API était écrite dans le bundle Angular au moment du build (`http://localhost:8080/api`). Une image construite pour un environnement ne fonctionnait pas dans un autre, ce qui empêche de déployer la même image (tag immuable) partout.
+- **Décision :** l'image utilise `/api`. nginx, dans le même conteneur que le frontend, fait proxy vers le backend dont l'adresse est lue au démarrage (`BACKEND_URL`). En Kubernetes, l'Ingress pourra aussi router `/api` directement vers le backend.
+- **Conséquences :** une seule image pour Compose, Minikube et EKS ; plus de CORS en production (même origine) ; le backend n'a plus besoin d'être exposé publiquement. Le déploiement Netlify d'origine garde son mécanisme `API_URL`.
+
+## ADR-010 — Images de production durcies
+
+- **Date :** 2026-11-19 · **Statut :** acceptée
+- **Décisions :**
+  - Backend : runtime `eclipse-temurin:17-jre-alpine` (JRE seul, sans JDK ni Maven), utilisateur à UID numérique fixe `10001`.
+  - Frontend : `nginxinc/nginx-unprivileged` (UID 101, port 8080) au lieu de `nginx` qui démarre en root.
+  - `HEALTHCHECK` dans les deux images ; `-XX:MaxRAMPercentage=75` pour que la JVM respecte la limite mémoire du conteneur.
+  - nginx écrase `X-Forwarded-For` avec l'IP qu'il voit : un client ne peut plus usurper une IP pour contourner le rate limiting.
+- **Conséquences :** images plus petites, compatibles avec `runAsNonRoot` en Kubernetes (phase I) ; ports internes à 8080 pour les deux services.
