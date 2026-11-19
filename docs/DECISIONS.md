@@ -51,3 +51,16 @@ pour pouvoir la justifier plus tard (soutenance, entretien, nouveau membre de l'
 - **Date :** 2026-11-19 · **Statut :** acceptée
 - **Décision :** valider entièrement le déploiement Kubernetes sur Minikube avant de créer toute ressource AWS payante.
 - **Conséquences :** apprentissage et corrections gratuits ; les ressources AWS ne sont créées qu'après validation locale et accord explicite sur les coûts.
+
+## ADR-008 — Conception de la CI GitHub Actions
+
+- **Date :** 2026-11-19 · **Statut :** acceptée
+- **Décisions :**
+  - Déclenchement sur push vers `main`/`develop` et sur Pull Request : les branches de travail sont testées via leur PR, sans exécution en double.
+  - `permissions: contents: read` au niveau du workflow (moindre privilège).
+  - Actions tierces épinglées par **SHA de commit** (avec la version en commentaire) : un tag peut être déplacé par un attaquant, un SHA non.
+  - `mvnw verify` au lieu de `test` : compile, teste et produit le `.jar`.
+  - Version de Node lue depuis `frontend/.nvmrc` : une seule source de vérité.
+  - Scan Trivy (dépendances + secrets) en mode rapport : les vulnérabilités existantes seront traitées en phase M, puis le job deviendra bloquant.
+  - Job `ci-status` unique pour la protection de branche.
+- **Reporté :** analyse de qualité de code (SonarCloud) et couverture de tests, à évaluer en phase M.

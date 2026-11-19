@@ -8,8 +8,8 @@
 |---|---|---|
 | A | Fork et configuration du dépôt | ✅ Terminé |
 | B | Audit de l'application | ✅ Terminé |
-| C | Organisation du dépôt DevOps | 🔄 En cours |
-| D | Intégration continue (GitHub Actions) | ⏳ À faire |
+| C | Organisation du dépôt DevOps | ✅ Terminé |
+| D | Intégration continue (GitHub Actions) | 🔄 En cours |
 | E | Conteneurisation Docker | ⏳ À faire |
 | F | Registre de conteneurs (GHCR) | ⏳ À faire |
 | G | Déploiement continu | ⏳ À faire |
@@ -42,6 +42,20 @@
 | Image backend de production | ✅ Démarre et répond |
 | Image frontend de production | ❌ Sert la page « Welcome to nginx! » |
 
+## Phase C — Organisation du dépôt ✅
+
+- `.gitattributes` : LF imposé (CRLF pour `*.cmd`/`*.bat`), binaires marqués — vérifié avec `git ls-files --eol`
+- Documents de suivi : `PROJECT_PROGRESS.md`, `ARCHITECTURE.md`, `DECISIONS.md` (ADR-001 à 007)
+- README : nombres de tests corrigés (126 backend, 101 frontend)
+- Commit `754ae1e` sur `devops/foundation`
+
+## Phase D — Intégration continue 🔄
+
+- `ci.yml` réécrit : jobs `backend`, `frontend`, `security`, `ci-status`
+- Déclencheurs : push sur `main`/`develop`, PR vers `main`/`develop`, lancement manuel
+- Rapports JUnit publiés en artefacts + résumé dans l'onglet *Summary* (`scripts/ci/junit-summary.py`)
+- Validation à faire : exécution verte sur la PR `devops/foundation → develop`, puis test d'un échec volontaire
+
 ## Problèmes connus
 
 | # | Problème | Gravité | Phase prévue |
@@ -61,4 +75,4 @@ Problème local résolu : le port 8080 était occupé par le listener Oracle (`T
 
 ## Prochaine action recommandée
 
-Terminer la phase C (commit + Pull Request vers `develop`), puis phase D : étendre `ci.yml`.
+Valider la CI sur la Pull Request (exécution verte + échec volontaire), puis fusionner dans `develop`.
