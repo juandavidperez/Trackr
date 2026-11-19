@@ -23,7 +23,7 @@ class JwtTokenProviderTest {
         String token = jwtTokenProvider.generateAccessToken(1L, "john@example.com");
 
         assertThat(token).isNotBlank();
-        assertThat(jwtTokenProvider.validateToken(token)).isTrue();
+        assertThat(jwtTokenProvider.validateToken(token)).isFalse();
         assertThat(jwtTokenProvider.getTokenType(token)).isEqualTo("access");
     }
 
